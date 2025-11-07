@@ -1,5 +1,5 @@
 "use client";
-import { useForm, SubmitHandler } from "react-hook-form";
+import { useForm, SubmitHandler, useWatch } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import {
@@ -10,7 +10,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import TotalAmount from "@/components/total-amount";
 import { Calendar, CreditCard, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FieldLabel } from "@/components/ui/field";
@@ -18,6 +17,10 @@ import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { TCheckout } from "@/lib/types/checkout";
 import { capitalize } from "@/lib/utils";
 import { updateLead } from "@/lib/api";
+import { Card, CardContent } from "./ui/card";
+import { format } from "date-fns";
+import PaymentPills from "./payment-pills";
+import CareerSummaryCard from "./career-summary-card";
 
 const APERTURE_DATES = [
   "2025-11-24",
@@ -41,20 +44,26 @@ const APERTURE_DATES = [
 function getApertureDateOptions() {
   // Return the 2 closest dates after the current date
   const currentDate = new Date();
-  const dates = APERTURE_DATES.map((date) => new Date(date));
+  const dates = APERTURE_DATES.map((date) => new Date(`${date}T00:00:00`));
   const closestDates = dates
     .filter((date) => date >= currentDate)
     .sort((a, b) => a.getTime() - b.getTime());
 
   return closestDates.slice(0, 2).map((date) => ({
-    label: date.toISOString().split("T")[0],
+    label: format(date, "dd/MM/yyyy"),
     value: date.toISOString().split("T")[0],
   }));
 }
 
 const schema = yup.object().shape({
-  firstName: yup.string().required("El nombre es requerido"),
-  lastName: yup.string().required("El apellido es requerido"),
+  firstName: yup
+    .string()
+    .required("El nombre es requerido")
+    .matches(/^[a-zA-Z]+$/, "El nombre solo puede contener letras"),
+  lastName: yup
+    .string()
+    .required("El apellido es requerido")
+    .matches(/^[a-zA-Z]+$/, "El apellido solo puede contener letras"),
   career: yup.string().required("La carrera es requerida"),
   startingDate: yup.string().required("La fecha de inicio es requerida"),
   discountType: yup.string().required("El plan de pago es requerido"),
@@ -67,10 +76,12 @@ export default function CheckoutForm({
   careers,
   discounts,
   checkout,
+  cost,
 }: {
   careers: TCareer[];
   discounts: TDiscount[];
   checkout: TCheckout;
+  cost: TCost;
 }) {
   const [firstName = "", lastName = ""] =
     checkout.lead?.nombre?.split(" ").filter(Boolean) || [];
@@ -85,26 +96,27 @@ export default function CheckoutForm({
     },
     resolver: yupResolver(schema),
   });
+  const selectedCareerId = useWatch({ name: "career", control: form.control });
 
   const onSubmit: SubmitHandler<TCheckoutForm> = async (data) => {
     const body = {
       university_email: `${data.firstName.toLowerCase()}.${data.lastName.toLowerCase()}@ukuepa.com`,
       discount: data.discountType,
       career: data.career,
-      lead_id: checkout.lead_id,
+      lead_id: checkout.lead.lead_id,
       starting_date: data.startingDate,
       total_amount: data.totalAmount,
     };
 
     // If the career is diferent from the initial career, update the lead before submitting the form
-    if (data.career !== checkout.lead?.carrera?.carrera_id) {
-      console.log("Career changed, updating lead");
-      await updateLead(checkout.lead_id, {
-        carrera: {
-          carrera_id: data.career,
-        },
-      });
-    }
+    // if (data.career !== checkout.lead?.carrera?.carrera_id) {
+    //   console.log("Career changed, updating lead");
+    //   await updateLead(checkout.lead.lead_id, {
+    //     carrera: {
+    //       carrera_id: data.career,
+    //     },
+    //   });
+    // }
 
     // Update the fecha_inicio before submitting the form
 
@@ -114,125 +126,105 @@ export default function CheckoutForm({
   return (
     <Form {...form}>
       <form className="space-y-2" onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="flex gap-1 items-start">
-          <FormField
-            control={form.control}
-            name="firstName"
-            render={({ field }) => (
-              <FormItem>
-                <FieldLabel htmlFor="firstName">Nombre</FieldLabel>
-                <Input {...field} />
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="lastName"
-            render={({ field }) => (
-              <FormItem>
-                <FieldLabel htmlFor="lastName">Apellido(s)</FieldLabel>
-                <Input {...field} />
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        <FormField
-          control={form.control}
-          name="career"
-          render={({ field }) => (
-            <FormItem>
-              <FieldLabel htmlFor="career">
-                <GraduationCap className="size-4" />
-                Carrera
-              </FieldLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <SelectTrigger id="career" className="w-full">
-                  <SelectValue placeholder="Selecciona una carrera" />
-                </SelectTrigger>
-                <SelectContent>
-                  {careers
-                    .sort((a, b) =>
-                      a.carrera_nombre.localeCompare(b.carrera_nombre)
-                    )
-                    .map((career) => (
-                      <SelectItem
-                        key={career.carrera_id}
-                        value={career.carrera_id}
-                      >
-                        {career.carrera_nombre}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="startingDate"
-          render={({ field }) => (
-            <FormItem>
-              <FieldLabel htmlFor="starting-date">
-                <Calendar className="size-4" />
-                Fecha de inicio
-              </FieldLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <SelectTrigger id="starting-date" className="w-full">
-                  <SelectValue placeholder="Selecciona una fecha" />
-                </SelectTrigger>
-                <SelectContent>
-                  {getApertureDateOptions().map((date) => (
-                    <SelectItem key={date.value} value={date.value}>
-                      {date.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <Card>
+          <CardContent className="space-y-2">
+            <div className="flex gap-1 items-start justify-stretch *:flex-1">
+              <FormField
+                control={form.control}
+                name="firstName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FieldLabel htmlFor="firstName">Nombre</FieldLabel>
+                    <Input {...field} />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FieldLabel htmlFor="lastName">Apellido(s)</FieldLabel>
+                    <Input {...field} />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormField
+              control={form.control}
+              name="career"
+              render={({ field }) => (
+                <FormItem>
+                  <FieldLabel htmlFor="career">
+                    <GraduationCap className="size-4" />
+                    Carrera
+                  </FieldLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger id="career" className="w-full">
+                      <SelectValue placeholder="Selecciona una carrera" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {careers
+                        .sort((a, b) =>
+                          a.carrera_nombre.localeCompare(b.carrera_nombre)
+                        )
+                        .map((career) => (
+                          <SelectItem
+                            key={career.carrera_id}
+                            value={career.carrera_id}
+                          >
+                            {career.carrera_nombre}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="startingDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FieldLabel htmlFor="starting-date">
+                    <Calendar className="size-4" />
+                    Fecha de inicio
+                  </FieldLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger id="starting-date" className="w-full">
+                      <SelectValue placeholder="Selecciona una fecha" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getApertureDateOptions().map((date) => (
+                        <SelectItem key={date.value} value={date.value}>
+                          {date.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <FormField
-          control={form.control}
-          name="discountType"
-          render={({ field }) => (
-            <FormItem>
-              <FieldLabel htmlFor="discount-type">
-                <CreditCard className="size-4" />
-                Plan de pago
-              </FieldLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <SelectTrigger id="discount-type" className="w-full">
-                  <SelectValue placeholder="Selecciona un plan de pago" />
-                </SelectTrigger>
-                <SelectContent>
-                  {discounts
-                    .sort((a, b) =>
-                      a.descuento_nombre.localeCompare(b.descuento_nombre)
-                    )
-                    .map((discount) => (
-                      <SelectItem
-                        key={discount.descuento_id}
-                        value={discount.descuento_id}
-                      >
-                        {capitalize(discount.descuento_nombre)}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+            <CareerSummaryCard
+              career={careers.find(
+                (career) => career.carrera_id === selectedCareerId
+              )}
+            />
+          </CardContent>
+        </Card>
 
-        <TotalAmount checkoutId={checkout.checkout_id} />
-        <Button type="submit" className="float-end">
-          Ir al pago
+        <PaymentPills discounts={discounts} cost={cost} />
+        <Button type="submit" className="w-full">
+          Confirmar datos y pagar
         </Button>
+        <p className="text-[10px] text-uk-blue-text/70 text-center">
+          Al continuar aceptas los términos y el aviso de privacidad.
+        </p>
       </form>
     </Form>
   );

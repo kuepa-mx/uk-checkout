@@ -2,14 +2,69 @@
 
 import { TCheckout } from "../types/checkout";
 
-const API_URL = "https://lead.universidaduk.com";
+const API_URL = "https://f78604dfeaad.ngrok-free.app";
 
 export async function getCareers(): Promise<TCareer[]> {
   const response = await fetch(`${API_URL}/records/all/carrera?limit=100`, {
     method: "GET",
   });
+  if (response.status !== 200) {
+    throw new Error("Failed to fetch careers");
+  }
   const { data } = (await response.json()) as Page<TCareer>;
   return data;
+}
+
+export async function getCareerCost(accountId: string, countryId: string) {
+  const params = new URLSearchParams();
+  params.set(
+    "where",
+    JSON.stringify({
+      pais: {
+        pais_id: countryId,
+      },
+      cuenta: {
+        cuenta_id: accountId,
+      },
+    })
+  );
+
+  // {
+  //   "data": [
+  //     {
+  //       "costo_id": "00335597-f129-46ea-a88c-4336c27bdb51",
+  //       "costo_carrera": 14364,
+  //       "costo_activo": true,
+  //       "cuenta": {
+  //         "cuenta_id": "0c8879e9-0d77-4af3-bc0d-80bdb3230814",
+  //         "cuenta_tipo": "Ingenieria en Inteligencia Artificial",
+  //         "cuenta_cantidad_cuotas": 36,
+  //         "cuenta_activo": true
+  //       },
+  //       "pais": {
+  //         "pais_id": "cf30e37d-e17e-4c2e-a2f3-aa1f95945303",
+  //         "pais_nombre": "Peru",
+  //         "pais_moneda": "Soles Peruanos",
+  //         "pais_activo": true
+  //       }
+  //     }
+  //   ],
+  //   "total": 1,
+  //   "page": 1,
+  //   "limit": 10
+  // }
+  const response = await fetch(
+    `${API_URL}/records/all/costo?${params.toString()}`,
+    {
+      method: "GET",
+    }
+  );
+  const { data } = (await response.json()) as Page<TCost>;
+
+  if (!data || data.length === 0) {
+    throw new Error("Cost not found");
+  }
+  return data[0];
 }
 
 export async function getDiscounts(): Promise<TDiscount[]> {
@@ -21,6 +76,9 @@ export async function getDiscounts(): Promise<TDiscount[]> {
   const response = await fetch(`${API_URL}/records/all/descuento?limit=100`, {
     method: "GET",
   });
+  if (response.status !== 200) {
+    throw new Error("Failed to fetch discounts");
+  }
   const { data } = (await response.json()) as Page<TDiscount>;
   return data.filter((discount) =>
     discount_whitelist.includes(discount.descuento_id)
@@ -45,31 +103,11 @@ export async function updateLead(id: string, body: DeepPartial<TLead>) {
 }
 
 export async function getCheckout(checkoutId: string): Promise<TCheckout> {
-  return {
-    checkout_id: "1d2087cc-febb-4d9f-b975-5499ff18943b",
-    checkout_url: "/checkout/1d2087cc-febb-4d9f-b975-5499ff18943b",
-    checkout_status: "created",
-    expires_at: "2025-12-05T18:42:02.808Z",
-    lead_id: "01d72748-2a64-45e1-a092-40ab4dae6950",
-    lead: {
-      lead_id: "01d72748-2a64-45e1-a092-40ab4dae6950",
-      nombre: "John Doe",
-      email: "john.doe@example.com",
-      telefono: "1234567890",
-      telefono_lada: "123",
-      fecha_creacion: "2025-01-01T00:00:00.000Z",
-      hora_creacion: "00:00:00",
-      contactado_sin_exito: false,
-      carrera: {
-        carrera_nombre: "Computer Science",
-        carrera_activo: true,
-        carrera_codigo: "CS",
-        carrera_id: "1234567890",
-      },
-    },
-  } as TCheckout;
-
   const response = await fetch(`${API_URL}/checkout/${checkoutId}`);
+  if (response.status !== 200) {
+    console.error(await response.text(), response.status);
+    throw new Error("Failed to fetch checkout");
+  }
   const data = (await response.json()) as TCheckout;
   return data;
 }
@@ -94,6 +132,12 @@ export async function createCheckout({
       owner_email,
     }),
   });
+
+  if (response.status !== 200) {
+    console.error(await response.text(), response.status);
+    throw new Error("Failed to create checkout");
+  }
+
   const data = (await response.json()) as TCheckout;
   return data;
 }
@@ -105,7 +149,7 @@ export async function computeTotalAmount(
     signal?: AbortSignal;
   } = {}
 ) {
-  throw new Error("Not implemented");
+  // throw new Error("Not implemented");
 
   const response = await fetch(
     `${API_URL}/checkout/${checkoutId}/calculate-payment?descuento_id=${discountId}`,

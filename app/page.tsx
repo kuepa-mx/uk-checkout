@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createCheckout } from "@/lib/api";
-import { TCheckout } from "@/lib/types/checkout";
 import { redirect } from "next/navigation";
 
 const isDev = process.env.NODE_ENV === "development";
@@ -21,7 +20,7 @@ export default function Home() {
       <h1>UK Checkout</h1>
 
       <form
-        className="flex flex-col gap-2 max-w-sm p-2"
+        className="flex flex-col gap-2 max-w-sm p-2 bg-background"
         action={async (fd: FormData) => {
           "use server";
           const body = {

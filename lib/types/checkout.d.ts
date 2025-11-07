@@ -7,8 +7,6 @@
 // }
 
 export type TCheckout = {
-  checkout_id: string;
-  checkout_url: string;
   checkout_status:
     | "created"
     | "in_progress"
@@ -17,6 +15,17 @@ export type TCheckout = {
     | "expired"
     | "canceled";
   expires_at: string;
-  lead_id: string;
+  checkout_id: string;
   lead: TLead;
+  generated_by_type: string;
+  owner_email: string;
+  agent_name: string | null;
+  selected_fecha_inicio: string | null;
+  selected_plan_type: string | null;
+  payment_link: string | null;
+  payment_method: string | null;
+  payment_link_generated_at: string | null;
+  created_at: string;
+  updated_at: string;
+  paid_at: string | null;
 };
