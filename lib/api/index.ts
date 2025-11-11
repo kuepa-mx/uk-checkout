@@ -1,18 +1,30 @@
 "use server";
 
+import { TCheckoutForm } from "@/components/checkout-form";
 import { TCheckout } from "../types/checkout";
 
 const API_URL = "https://qa.universidaduk.com";
 
-export async function getCareers(): Promise<TCareer[]> {
-  const response = await fetch(`${API_URL}/records/all/carrera?limit=100`, {
-    method: "GET",
-  });
-  if (response.status !== 200) {
-    throw new Error("Failed to fetch careers");
+async function apiRequest<T>(
+  url: string,
+  options: RequestInit,
+  { onError }: { onError?: (error: Error) => void } = {}
+): Promise<T> {
+  const response = await fetch(`${API_URL}${url}`, options);
+  if (!response.ok) {
+    onError?.(new Error(`Failed to fetch data: ${response.statusText}`));
   }
-  const { data } = (await response.json()) as Page<TCareer>;
-  return data;
+  return (await response.json()) as T;
+}
+
+export async function getCareers(): Promise<TCareer[]> {
+  const response = await apiRequest<Page<TCareer>>(
+    "/records/all/carrera?limit=100",
+    {
+      method: "GET",
+    }
+  );
+  return response.data;
 }
 
 export async function getCareerCost(accountId: string, countryId: string) {
@@ -29,60 +41,35 @@ export async function getCareerCost(accountId: string, countryId: string) {
     })
   );
 
-  // {
-  //   "data": [
-  //     {
-  //       "costo_id": "00335597-f129-46ea-a88c-4336c27bdb51",
-  //       "costo_carrera": 14364,
-  //       "costo_activo": true,
-  //       "cuenta": {
-  //         "cuenta_id": "0c8879e9-0d77-4af3-bc0d-80bdb3230814",
-  //         "cuenta_tipo": "Ingenieria en Inteligencia Artificial",
-  //         "cuenta_cantidad_cuotas": 36,
-  //         "cuenta_activo": true
-  //       },
-  //       "pais": {
-  //         "pais_id": "cf30e37d-e17e-4c2e-a2f3-aa1f95945303",
-  //         "pais_nombre": "Peru",
-  //         "pais_moneda": "Soles Peruanos",
-  //         "pais_activo": true
-  //       }
-  //     }
-  //   ],
-  //   "total": 1,
-  //   "page": 1,
-  //   "limit": 10
-  // }
-  const response = await fetch(
-    `${API_URL}/records/all/costo?${params.toString()}`,
+  const response = await apiRequest<Page<TCost>>(
+    `/records/all/costo?${params.toString()}`,
     {
       method: "GET",
     }
   );
-  const { data } = (await response.json()) as Page<TCost>;
-
-  if (!data || data.length === 0) {
-    throw new Error("Cost not found");
-  }
-  return data[0];
+  return response.data[0];
 }
 
 export async function getDiscounts(): Promise<TDiscount[]> {
-  const discount_whitelist = [
-    "5596f3c7-f73f-43db-a130-c018be03e7f7", // Pago Mensual
-    "cf4cacc4-ca5a-458c-8ebf-31253abb8cc8", // Pago Cuatrimestral
-    "05f470ed-eb9d-44f3-82c7-0b8e989f394c", // Pago Completo
-  ];
-  const response = await fetch(`${API_URL}/records/all/descuento?limit=100`, {
-    method: "GET",
-  });
-  if (response.status !== 200) {
-    throw new Error("Failed to fetch discounts");
-  }
-  const { data } = (await response.json()) as Page<TDiscount>;
-  return data.filter((discount) =>
-    discount_whitelist.includes(discount.descuento_id)
+  const params = new URLSearchParams();
+  params.set("limit", "100");
+  params.set(
+    "where",
+    JSON.stringify({
+      checkout: true,
+    })
   );
+  const response = await apiRequest<Page<TDiscount>>(
+    `/records/all/descuento?${params.toString()}`,
+    {
+      method: "GET",
+    }
+  );
+  if (response?.data?.length === 0) {
+    console.error("No discounts found for checkout");
+    return [];
+  }
+  return response.data;
 }
 
 export async function getGroupsByCareerCode(careerCode: string) {
@@ -95,55 +82,48 @@ export async function getGroupsByCareerCode(careerCode: string) {
   );
   params.set("limit", "1000");
 
-  console.log("Getting groups by career code", careerCode);
-  const response = await fetch(
-    `${API_URL}/records/all/grupo?${params.toString()}`,
+  const response = await apiRequest<Page<TGrupo>>(
+    `/records/all/grupo?${params.toString()}`,
     {
       method: "GET",
     }
   );
-  if (response.status !== 200) {
-    console.error(await response.text(), response.status);
-    throw new Error("Failed to fetch groups");
-  }
-  const { data, total } = (await response.json()) as Page<TGrupo>;
-
-  // if (total === 0) {
-  //   throw new Error("No groups found for career code " + careerCode);
-  // }
-
-  return data;
+  return response.data;
 }
 
 export async function getLead(id: string) {
-  const response = await fetch(`${API_URL}/records/byid/lead/${id}`, {
+  const response = await apiRequest<TLead>(`/records/byid/lead/${id}`, {
     method: "GET",
   });
-  const data = (await response.json()) as TLead;
-  return data;
+  return response;
 }
 
 export async function updateLead(id: string, body: DeepPartial<TLead>) {
   console.log("Updating lead", id, body);
-  const response = await fetch(`${API_URL}/records/lead/${id}`, {
+  const response = await apiRequest<TLead>(`/records/lead/${id}`, {
     method: "PATCH",
     body: JSON.stringify(body),
     headers: {
       "Content-Type": "application/json",
     },
   });
-  const data = (await response.json()) as TLead;
-  return data;
+  return response;
 }
 
-export async function getCheckout(checkoutId: string): Promise<TCheckout> {
-  const response = await fetch(`${API_URL}/checkout/${checkoutId}`);
-  if (response.status !== 200) {
-    console.error(await response.text(), response.status);
-    throw new Error("Failed to fetch checkout");
+export async function getCheckout(
+  checkoutId: string
+): Promise<TCheckout | null> {
+  const response = await apiRequest<TCheckout | null>(
+    `/checkout/${checkoutId}`,
+    {
+      method: "GET",
+    }
+  ).catch(() => null);
+  if (!response) {
+    console.error("No checkout found for checkout ID", checkoutId);
+    return null;
   }
-  const data = (await response.json()) as TCheckout;
-  return data;
+  return response;
 }
 
 export async function updateCheckoutStartingDate(
@@ -151,7 +131,7 @@ export async function updateCheckoutStartingDate(
   fecha_inicio: string
 ) {
   console.log("Updating checkout starting date", checkoutId, fecha_inicio);
-  const response = await fetch(
+  const response = await apiRequest<TCheckout>(
     `${API_URL}/checkout/${checkoutId}/fecha-inicio`,
     {
       method: "PATCH",
@@ -159,14 +139,15 @@ export async function updateCheckoutStartingDate(
       headers: {
         "Content-Type": "application/json",
       },
+    },
+    {
+      onError: (error) => {
+        console.error("Failed to update checkout starting date", error);
+      },
     }
   );
-  if (response.status !== 200) {
-    console.error(await response.text(), response.status);
-    throw new Error("Failed to update checkout");
-  }
-  const data = (await response.json()) as TCheckout;
-  return data;
+
+  return response;
 }
 
 type TCreateCheckout = {
@@ -199,23 +180,146 @@ export async function createCheckout({
   return data;
 }
 
+export async function updateCheckout(
+  checkoutId: string,
+  body: DeepPartial<TCheckout>
+) {
+  console.log("Updating checkout", checkoutId, body);
+  const response = await apiRequest<TCheckout>(
+    `/checkout/${checkoutId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(body),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    },
+    {
+      onError: (error) => {
+        console.error("Failed to update checkout", error);
+      },
+    }
+  );
+  return response;
+}
+
 export async function computeTotalAmount(
   checkoutId: string,
-  discountId: string,
-  options: {
-    signal?: AbortSignal;
-  } = {}
+  discountId: string
 ) {
-  // throw new Error("Not implemented");
+  console.log("Computing total amount", checkoutId, discountId);
 
-  const response = await fetch(
-    `${API_URL}/checkout/${checkoutId}/calculate-payment?descuento_id=${discountId}`,
+  const data = await apiRequest<{
+    monto_final: number;
+    descuento_porcentaje: number;
+    monto_neto: number;
+  }>(
+    `/checkout/${checkoutId}/calculate-payment?descuento_id=${discountId}`,
     {
       method: "POST",
-      signal: options.signal,
+    },
+    {
+      onError: (error) => {
+        console.error("Failed to compute total amount", error);
+        throw error;
+      },
     }
   );
 
-  const data = (await response.json()) as { monto_final: number };
-  return data.monto_final;
+  return data;
+}
+
+export async function generatePaymentLink(body: {
+  lead_id: string;
+  paymentMethod: "mercadopago" | "flywire";
+  amount: number;
+  paymentTypes: string;
+  solicited_email: string;
+  pago_cuotas_aplicar_descuento: number;
+  fecha_promesa_pago: string;
+  group: string;
+  pago_especial_cuatrimestre?: boolean;
+}) {
+  console.log("Generating payment link", body);
+  if (body.amount <= 0) {
+    throw new Error("Amount must be greater than 0");
+  }
+  // {
+  //   "paymentUrl": "https://payment.flywire.com/orders/8b9dce15-5bf9-47d3-9450-72741ffa1a62?token=32eed206-58fe-4606-9ce6-6a515c0c03cb&platform=json_gateway",
+  //   "paymentId": "f87b2801-e4c8-42a0-8cb2-ede50c56772d"
+  // }
+  const response = await apiRequest<{ paymentUrl: string; paymentId: string }>(
+    `/payments/create`,
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+  console.log("Payment link generated", response);
+  return response;
+}
+
+export async function handleCheckoutSubmission(
+  data: TCheckoutForm,
+  checkout: TCheckout,
+  discount: TDiscount,
+  career: TCareer
+) {
+  const universityEmail = `${data.firstName.toLowerCase()}.${data.lastName.toLowerCase()}@ukuepa.com`;
+  // If the lead is from Mexico, use Mercado Pago, otherwise use Flywire
+  const paymentMethod =
+    checkout.lead.pais.pais_nombre === "Mexico" ? "mercadopago" : "flywire";
+
+  const groups = await getGroupsByCareerCode(career.carrera_codigo);
+  const group = groups.find(
+    (group) =>
+      group.grupo_nombre === `${career.carrera_codigo}_${data.startingDate}`
+  );
+  if (!group) {
+    throw new Error(
+      `Group not found for career ${career.carrera_codigo} and starting date ${data.startingDate}`
+    );
+  }
+
+  const cost = await getCareerCost(
+    career.cuenta.cuenta_id,
+    checkout.lead.pais.pais_id
+  );
+
+  // Update the lead
+  await updateLead(checkout.lead.lead_id, {
+    grupo: {
+      grupo_id: group.grupo_id,
+    },
+    status: "En proceso de pago",
+    correo_universitario: universityEmail,
+    fecha_promesa_pago: new Date().toISOString().split("T")[0],
+  });
+
+  const paymentLink = await generatePaymentLink({
+    lead_id: checkout.lead.lead_id,
+    paymentMethod,
+    amount: data.totalAmount,
+    paymentTypes: "Colegiatura",
+    solicited_email: universityEmail,
+    pago_cuotas_aplicar_descuento: discount.descuento_cuotas
+      ? Number(discount.descuento_cuotas)
+      : cost.cuenta.cuenta_cantidad_cuotas,
+    fecha_promesa_pago: new Date().toISOString().split("T")[0],
+    group: group.grupo_id,
+  });
+
+  // Update the checkout
+  await updateCheckout(checkout.checkout_id, {
+    payment_link: paymentLink.paymentUrl,
+    pago_id: paymentLink.paymentId,
+    payment_method: paymentMethod,
+    payment_link_generated_at: new Date().toISOString(),
+    checkout_status: "payment_generated",
+  });
+
+  return paymentLink;
 }

@@ -17,6 +17,7 @@ export type TCheckout = {
   expires_at: string;
   checkout_id: string;
   lead: TLead;
+  pago_id: string | null;
   generated_by_type: string;
   owner_email: string;
   agent_name: string | null;

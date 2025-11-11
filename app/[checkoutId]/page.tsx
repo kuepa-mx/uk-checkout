@@ -1,11 +1,6 @@
 import CheckoutForm from "@/components/checkout-form";
-import {
-  getCareerCost,
-  getCareers,
-  getCheckout,
-  getDiscounts,
-  getGroupsByCareerCode,
-} from "@/lib/api";
+import { getCareers, getCheckout, getDiscounts } from "@/lib/api";
+import CheckoutDetails from "@/components/checkout-details";
 
 export default async function CheckoutPage({
   params,
@@ -20,27 +15,22 @@ export default async function CheckoutPage({
     getDiscounts(),
   ]);
 
+  if (!checkout) {
+    return <div>No se encontró el checkout</div>;
+  }
+
   if (!checkout.lead?.carrera?.carrera_id || !checkout.lead?.pais?.pais_id) {
     return <div>No se encontró la carrera o el país</div>;
   }
 
-  const groups = await getGroupsByCareerCode(
-    checkout.lead.carrera.carrera_codigo
-  );
-
-  const cost = await getCareerCost(
-    checkout.lead.carrera.cuenta.cuenta_id,
-    checkout.lead.pais.pais_id
-  );
-
-  console.log("Groups", groups);
+  // if (
+  //   checkout.checkout_status === "payment_generated" ||
+  //   checkout.checkout_status === "paid"
+  // ) {
+  //   return <CheckoutDetails checkout={checkout} />;
+  // }
 
   return (
-    <CheckoutForm
-      careers={careers}
-      discounts={discounts}
-      checkout={checkout}
-      cost={cost}
-    />
+    <CheckoutForm careers={careers} discounts={discounts} checkout={checkout} />
   );
 }

@@ -1,5 +1,12 @@
 "use client";
-import { useForm, SubmitHandler, useWatch } from "react-hook-form";
+import {
+  useForm,
+  SubmitHandler,
+  useWatch,
+  useFormContext,
+  UseFormReturn,
+  useFormState,
+} from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import {
@@ -10,18 +17,32 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Calendar, GraduationCap } from "lucide-react";
+import {
+  ArrowLeftIcon,
+  Calendar,
+  CheckCheckIcon,
+  GraduationCap,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FieldLabel } from "@/components/ui/field";
 import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { TCheckout } from "@/lib/types/checkout";
-import { updateCheckoutStartingDate, updateLead } from "@/lib/api";
-import { Card, CardContent } from "./ui/card";
+import {
+  generatePaymentLink,
+  getGroupsByCareerCode,
+  handleCheckoutSubmission,
+  updateCheckoutStartingDate,
+  updateLead,
+} from "@/lib/api";
+import { Card, CardContent, CardFooter } from "./ui/card";
 import { format } from "date-fns";
-import PaymentPills from "./payment-pills";
+import PaymentPills, { PaymentPill } from "./payment-pills";
 import CareerSummaryCard from "./career-summary-card";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { Spinner } from "./ui/spinner";
+import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 
 const APERTURE_DATES = [
   "2025-11-24",
@@ -67,8 +88,11 @@ const schema = yup.object().shape({
     .matches(/^[a-zA-Z]+$/, "El apellido solo puede contener letras"),
   career: yup.string().required("La carrera es requerida"),
   startingDate: yup.string().required("La fecha de inicio es requerida"),
-  discountType: yup.string().required("El plan de pago es requerido"),
-  totalAmount: yup.number().required("El monto total es requerido").nullable(),
+  discountType: yup
+    .string()
+    .required("El plan de pago es requerido")
+    .min(1, "El plan de pago es requerido"),
+  totalAmount: yup.number().required("El monto total es requerido"),
 });
 
 export type TCheckoutForm = yup.InferType<typeof schema>;
@@ -77,82 +101,141 @@ export default function CheckoutForm({
   careers,
   discounts,
   checkout,
-  cost,
 }: {
   careers: TCareer[];
   discounts: TDiscount[];
   checkout: TCheckout;
-  cost: TCost;
 }) {
+  const router = useRouter();
   const [firstName = "", lastName = ""] =
     checkout.lead?.nombre?.split(" ").filter(Boolean) || [];
   const form = useForm<TCheckoutForm>({
+    mode: "onChange",
+    reValidateMode: "onChange",
     defaultValues: {
       firstName: firstName,
       lastName: lastName,
       career: checkout.lead?.carrera?.carrera_id || "",
       startingDate: checkout.selected_fecha_inicio || "",
-      discountType: "5596f3c7-f73f-43db-a130-c018be03e7f7", // Pago Mensual
-      totalAmount: null,
+      discountType: "", // Pago Mensual
+      totalAmount: 0,
     },
     resolver: yupResolver(schema),
   });
+
   const selectedCareerId = useWatch({ name: "career", control: form.control });
+  const formState = useFormState({ control: form.control });
+  const [confirmationStep, setConfirmationStep] = useState(false);
+
+  const { mutate: updateLeadMutation, isPending: isUpdatingLead } = useMutation(
+    {
+      mutationFn: (body: DeepPartial<TLead>) =>
+        updateLead(checkout.lead.lead_id, body),
+      onSuccess: (data) => {
+        console.log("Lead actualizada", data);
+      },
+      onError: (error) => {
+        console.error(error);
+      },
+    }
+  );
+
+  const {
+    mutate: updateCheckoutStartingDateMutation,
+    isPending: isUpdatingCheckoutStartingDate,
+  } = useMutation({
+    mutationFn: (fecha_inicio: string) =>
+      updateCheckoutStartingDate(checkout.checkout_id, fecha_inicio),
+    onSuccess: (data) => {
+      console.log("Fecha de inicio actualizada", data);
+    },
+    onError: (error) => {
+      console.error(error);
+    },
+  });
 
   useEffect(() => {
-    // const unsubscribe = form.subscribe({
-    //   name: ["startingDate", "career"],
-    //   formState: {
-    //     values: true,
-    //   },
-    //   callback: ({ values, defaultValues }) => {
-    //     if (values.startingDate !== defaultValues?.startingDate) {
-    //       updateCheckoutStartingDate(checkout.checkout_id, values.startingDate)
-    //         .then((data) => {
-    //           console.log("Fecha de inicio actualizada", data);
-    //         })
-    //         .catch((error) => {
-    //           console.error(error);
-    //         });
-    //     }
-    //     if (values.career !== defaultValues?.career) {
-    //       updateLead(checkout.lead.lead_id, {
-    //         carrera: {
-    //           carrera_id: values.career,
-    //         },
-    //       })
-    //         .then((data) => {
-    //           console.log("Carrera actualizada", data);
-    //         })
-    //         .catch((error) => {
-    //           console.error(error);
-    //         });
-    //     }
-    //   },
-    // });
-    // return () => unsubscribe();
-  }, [form, checkout.checkout_id, checkout.lead.lead_id]);
+    const unsubscribe = form.subscribe({
+      name: ["startingDate", "career"],
+      formState: {
+        values: true,
+      },
+      callback: ({ values, defaultValues }) => {
+        if (values.startingDate !== defaultValues?.startingDate) {
+          updateCheckoutStartingDateMutation(values.startingDate);
+        }
+        if (values.career !== defaultValues?.career) {
+          updateLeadMutation({
+            carrera: {
+              carrera_id: values.career,
+            },
+          });
+        }
+      },
+    });
+    return () => unsubscribe();
+  }, [form, updateCheckoutStartingDateMutation, updateLeadMutation]);
 
-  const onSubmit: SubmitHandler<TCheckoutForm> = async (data) => {
-    const body = {
-      university_email: `${data.firstName.toLowerCase()}.${data.lastName.toLowerCase()}@ukuepa.com`,
-      discount: data.discountType,
-      career: data.career,
-      lead_id: checkout.lead.lead_id,
-      starting_date: data.startingDate,
-      total_amount: data.totalAmount,
-    };
-    alert(JSON.stringify(body, null, 2));
-  };
+  const onSubmit = useCallback<SubmitHandler<TCheckoutForm>>(
+    async (data) => {
+      const discount = discounts.find(
+        (discount) => discount.descuento_id === data.discountType
+      );
+      const career = careers.find(
+        (career) => career.carrera_id === data.career
+      );
+      if (!career) {
+        throw new Error("Career not found");
+      }
+      if (!discount) {
+        throw new Error("Discount not found");
+      }
 
-  const isLoading = form.formState.isSubmitting || form.formState.isLoading;
+      const paymentLink = await handleCheckoutSubmission(
+        data,
+        checkout,
+        discount,
+        career
+      );
+      console.log("Payment link", paymentLink);
+      if (paymentLink.paymentUrl) {
+        window.open(paymentLink.paymentUrl, "_blank");
+      }
+      router.refresh();
+    },
+    [careers, discounts, checkout, router]
+  );
+
+  const isLoading =
+    formState.isSubmitting || isUpdatingCheckoutStartingDate || isUpdatingLead;
+
+  if (formState.isSubmitting) {
+    return (
+      <div className="flex items-center gap-4 justify-center h-full grow">
+        <Spinner className="size-6 mx-auto my-auto h-full grow" />
+        Enviando datos...
+      </div>
+    );
+  }
+
+  if (confirmationStep)
+    return (
+      <InscriptionDataReviewStep
+        checkout={checkout}
+        form={form}
+        onPrevClick={() => setConfirmationStep(false)}
+        onConfirmClick={form.handleSubmit(onSubmit)}
+        discounts={discounts}
+        careers={careers}
+      />
+    );
 
   return (
     <Form {...form}>
       <form
         className={cn(
           "space-y-2 h-full grow flex flex-col",
-          isLoading && "opacity-50 pointer-events-none"
+          isLoading && "pointer-events-none"
         )}
         onSubmit={form.handleSubmit(onSubmit)}
       >
@@ -248,10 +331,29 @@ export default function CheckoutForm({
           </CardContent>
         </Card>
 
-        <PaymentPills discounts={discounts} cost={cost} />
+        <PaymentPills
+          discounts={discounts}
+          checkoutId={checkout.checkout_id}
+          career={careers.find(
+            (career) => career.carrera_id === selectedCareerId
+          )}
+        />
         <div className="flex flex-col items-center justify-center gap-2 mt-auto">
-          <Button type="submit" className="w-full">
-            Confirmar datos y pagar
+          <Button
+            type="button"
+            className="w-full"
+            disabled={isLoading}
+            onClick={() => {
+              form
+                .trigger()
+                .then((isValid) => isValid && setConfirmationStep(true));
+            }}
+          >
+            {isLoading ? (
+              <Spinner className="size-4 animate-spin" />
+            ) : (
+              "Siguiente"
+            )}
           </Button>
           <p className="text-[10px] text-uk-blue-text/70 text-center">
             Al continuar aceptas los términos y el aviso de privacidad.
@@ -261,3 +363,94 @@ export default function CheckoutForm({
     </Form>
   );
 }
+
+function InscriptionDataReviewStep({
+  checkout,
+  form,
+  onPrevClick,
+  onConfirmClick,
+  discounts,
+  careers,
+}: {
+  checkout: TCheckout;
+  form: UseFormReturn<TCheckoutForm>;
+  onPrevClick: () => void;
+  onConfirmClick: () => void;
+  discounts: TDiscount[];
+  careers: TCareer[];
+}) {
+  const firstName = useWatch({ name: "firstName", control: form.control });
+  const lastName = useWatch({ name: "lastName", control: form.control });
+  const career = useWatch({ name: "career", control: form.control });
+  const startingDate = useWatch({
+    name: "startingDate",
+    control: form.control,
+  });
+  const discountType = useWatch({
+    name: "discountType",
+    control: form.control,
+  });
+  const formState = useFormState({ control: form.control });
+
+  const careerData = careers.find(({ carrera_id }) => carrera_id === career);
+
+  return (
+    <div className="flex flex-col gap-4 h-full grow">
+      <div className="flex gap-1 items-start justify-stretch *:flex-1">
+        <Field label="Nombre" value={firstName} />
+        <Field label="Apellido" value={lastName} />
+      </div>
+      <div className="flex gap-1 items-start justify-stretch *:flex-1">
+        <Field label="Carrera" value={careerData?.carrera_nombre} />
+        <Field
+          label="Grupo"
+          value={`${careerData?.carrera_codigo}_${startingDate}`}
+        />
+      </div>
+      <Field
+        label="Fecha de inicio"
+        value={format(new Date(`${startingDate}T00:00:00`), "dd/MM/yyyy")}
+      />
+      <Field
+        label="Correo universitario"
+        value={`${firstName.toLowerCase()}.${lastName.toLowerCase()}@ukuepa.com`}
+      />
+
+      <PaymentPill
+        key={discountType}
+        discount={
+          discounts.find((discount) => discount.descuento_id === discountType)!
+        }
+        checkoutId={checkout.checkout_id}
+        career={careerData!}
+        control={form.control}
+      />
+
+      <div className="flex flex-col gap-2 mt-auto">
+        <Button type="button" onClick={onPrevClick} variant="outline">
+          Volver
+        </Button>
+        <Button
+          type="submit"
+          onClick={onConfirmClick}
+          disabled={formState.isSubmitting}
+        >
+          Confirmar y pagar
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+const Field = ({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | undefined;
+}) => (
+  <div className="flex flex-col gap-0.5">
+    <p className="text-sm text-uk-blue-text/80">{label}</p>
+    <p className="text-base font-medium text-uk-blue-text">{value ?? "-"}</p>
+  </div>
+);
