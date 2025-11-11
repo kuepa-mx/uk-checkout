@@ -14,13 +14,6 @@ const computePrice = (cost: TCost, discount: TDiscount) => {
     ? installmentCost * Number(discount.descuento_cuotas)
     : cost.costo_carrera;
 
-  console.log(
-    total,
-    discount.descuento_porcentaje,
-    discount.descuento_cuotas,
-    cost.cuenta.cuenta_cantidad_cuotas
-  );
-
   return Math.ceil(total * (1 - Number(discount.descuento_porcentaje ?? 0)));
 };
 
@@ -33,6 +26,7 @@ export default function PaymentPills({
 }) {
   const { setValue } = useFormContext<TCheckoutForm>();
   const selectedDiscountId = useWatch({ name: "discountType" });
+  const selectedCareerId = useWatch({ name: "career" });
 
   const installmentCost =
     cost.costo_carrera / cost.cuenta.cuenta_cantidad_cuotas;
@@ -74,7 +68,7 @@ export default function PaymentPills({
             key={plan.id}
             type="button"
             className={
-              "flex items-center justify-between rounded-2xl border px-3 py-3 text-left transition hover:bg-uk-blue-text/10 hover:text-uk-blue-text" +
+              "flex items-center justify-between gap-2 rounded-2xl border px-3 py-3 text-left transition hover:bg-uk-blue-text/10 hover:text-uk-blue-text" +
               (selectedDiscountId === plan.id
                 ? "border-[#FF7A00]! bg-[#FF7A00]! text-white! shadow-md!"
                 : "border-[#0B1F3A]/15 bg-white text-[#0B1F3A]") +
@@ -85,15 +79,17 @@ export default function PaymentPills({
           >
             <div className="flex flex-col leading-tight">
               <span className="text-[14px] font-semibold">{plan.label}</span>
-              <span className="text-[10px] opacity-70">{plan.subtitle}</span>
+              <span className="text-[10px] opacity-85">{plan.subtitle}</span>
             </div>
             <div className="flex flex-col">
               {plan.total !== plan.price && (
-                <span className="text-[9px] font-semibold line-through text-center ">
+                <span className="text-[10px] leading-2 font-semibold line-through text-center ">
                   {plan.total}
                 </span>
               )}
-              <span className="text-[14px] font-bold">{plan.price}</span>
+              <span className="text-base leading-5 font-bold">
+                {plan.price}
+              </span>
             </div>
           </button>
         ))}

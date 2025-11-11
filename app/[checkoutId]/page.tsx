@@ -4,6 +4,7 @@ import {
   getCareers,
   getCheckout,
   getDiscounts,
+  getGroupsByCareerCode,
 } from "@/lib/api";
 
 export default async function CheckoutPage({
@@ -23,12 +24,23 @@ export default async function CheckoutPage({
     return <div>No se encontró la carrera o el país</div>;
   }
 
+  const groups = await getGroupsByCareerCode(
+    checkout.lead.carrera.carrera_codigo
+  );
+
   const cost = await getCareerCost(
     checkout.lead.carrera.cuenta.cuenta_id,
     checkout.lead.pais.pais_id
   );
 
+  console.log("Groups", groups);
+
   return (
-    <CheckoutForm careers={careers} discounts={discounts} checkout={checkout} cost={cost} />
+    <CheckoutForm
+      careers={careers}
+      discounts={discounts}
+      checkout={checkout}
+      cost={cost}
+    />
   );
 }

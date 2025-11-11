@@ -10,17 +10,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Calendar, CreditCard, GraduationCap } from "lucide-react";
+import { Calendar, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FieldLabel } from "@/components/ui/field";
 import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { TCheckout } from "@/lib/types/checkout";
-import { capitalize } from "@/lib/utils";
-import { updateLead } from "@/lib/api";
+import { updateCheckoutStartingDate, updateLead } from "@/lib/api";
 import { Card, CardContent } from "./ui/card";
 import { format } from "date-fns";
 import PaymentPills from "./payment-pills";
 import CareerSummaryCard from "./career-summary-card";
+import { useEffect } from "react";
+import { cn } from "@/lib/utils";
 
 const APERTURE_DATES = [
   "2025-11-24",
@@ -90,13 +91,47 @@ export default function CheckoutForm({
       firstName: firstName,
       lastName: lastName,
       career: checkout.lead?.carrera?.carrera_id || "",
-      startingDate: "",
+      startingDate: checkout.selected_fecha_inicio || "",
       discountType: "5596f3c7-f73f-43db-a130-c018be03e7f7", // Pago Mensual
       totalAmount: null,
     },
     resolver: yupResolver(schema),
   });
   const selectedCareerId = useWatch({ name: "career", control: form.control });
+
+  useEffect(() => {
+    // const unsubscribe = form.subscribe({
+    //   name: ["startingDate", "career"],
+    //   formState: {
+    //     values: true,
+    //   },
+    //   callback: ({ values, defaultValues }) => {
+    //     if (values.startingDate !== defaultValues?.startingDate) {
+    //       updateCheckoutStartingDate(checkout.checkout_id, values.startingDate)
+    //         .then((data) => {
+    //           console.log("Fecha de inicio actualizada", data);
+    //         })
+    //         .catch((error) => {
+    //           console.error(error);
+    //         });
+    //     }
+    //     if (values.career !== defaultValues?.career) {
+    //       updateLead(checkout.lead.lead_id, {
+    //         carrera: {
+    //           carrera_id: values.career,
+    //         },
+    //       })
+    //         .then((data) => {
+    //           console.log("Carrera actualizada", data);
+    //         })
+    //         .catch((error) => {
+    //           console.error(error);
+    //         });
+    //     }
+    //   },
+    // });
+    // return () => unsubscribe();
+  }, [form, checkout.checkout_id, checkout.lead.lead_id]);
 
   const onSubmit: SubmitHandler<TCheckoutForm> = async (data) => {
     const body = {
@@ -107,25 +142,20 @@ export default function CheckoutForm({
       starting_date: data.startingDate,
       total_amount: data.totalAmount,
     };
-
-    // If the career is diferent from the initial career, update the lead before submitting the form
-    // if (data.career !== checkout.lead?.carrera?.carrera_id) {
-    //   console.log("Career changed, updating lead");
-    //   await updateLead(checkout.lead.lead_id, {
-    //     carrera: {
-    //       carrera_id: data.career,
-    //     },
-    //   });
-    // }
-
-    // Update the fecha_inicio before submitting the form
-
     alert(JSON.stringify(body, null, 2));
   };
 
+  const isLoading = form.formState.isSubmitting || form.formState.isLoading;
+
   return (
     <Form {...form}>
-      <form className="space-y-2" onSubmit={form.handleSubmit(onSubmit)}>
+      <form
+        className={cn(
+          "space-y-2 h-full grow flex flex-col",
+          isLoading && "opacity-50 pointer-events-none"
+        )}
+        onSubmit={form.handleSubmit(onSubmit)}
+      >
         <Card>
           <CardContent className="space-y-2">
             <div className="flex gap-1 items-start justify-stretch *:flex-1">
@@ -219,12 +249,14 @@ export default function CheckoutForm({
         </Card>
 
         <PaymentPills discounts={discounts} cost={cost} />
-        <Button type="submit" className="w-full">
-          Confirmar datos y pagar
-        </Button>
-        <p className="text-[10px] text-uk-blue-text/70 text-center">
-          Al continuar aceptas los términos y el aviso de privacidad.
-        </p>
+        <div className="flex flex-col items-center justify-center gap-2 mt-auto">
+          <Button type="submit" className="w-full">
+            Confirmar datos y pagar
+          </Button>
+          <p className="text-[10px] text-uk-blue-text/70 text-center">
+            Al continuar aceptas los términos y el aviso de privacidad.
+          </p>
+        </div>
       </form>
     </Form>
   );

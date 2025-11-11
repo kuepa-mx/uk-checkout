@@ -2,7 +2,7 @@
 
 import { TCheckout } from "../types/checkout";
 
-const API_URL = "https://f78604dfeaad.ngrok-free.app";
+const API_URL = "https://qa.universidaduk.com";
 
 export async function getCareers(): Promise<TCareer[]> {
   const response = await fetch(`${API_URL}/records/all/carrera?limit=100`, {
@@ -85,6 +85,36 @@ export async function getDiscounts(): Promise<TDiscount[]> {
   );
 }
 
+export async function getGroupsByCareerCode(careerCode: string) {
+  const params = new URLSearchParams();
+  params.set(
+    "where",
+    JSON.stringify({
+      grupo_codigo: careerCode,
+    })
+  );
+  params.set("limit", "1000");
+
+  console.log("Getting groups by career code", careerCode);
+  const response = await fetch(
+    `${API_URL}/records/all/grupo?${params.toString()}`,
+    {
+      method: "GET",
+    }
+  );
+  if (response.status !== 200) {
+    console.error(await response.text(), response.status);
+    throw new Error("Failed to fetch groups");
+  }
+  const { data, total } = (await response.json()) as Page<TGrupo>;
+
+  // if (total === 0) {
+  //   throw new Error("No groups found for career code " + careerCode);
+  // }
+
+  return data;
+}
+
 export async function getLead(id: string) {
   const response = await fetch(`${API_URL}/records/byid/lead/${id}`, {
     method: "GET",
@@ -94,9 +124,13 @@ export async function getLead(id: string) {
 }
 
 export async function updateLead(id: string, body: DeepPartial<TLead>) {
+  console.log("Updating lead", id, body);
   const response = await fetch(`${API_URL}/records/lead/${id}`, {
     method: "PATCH",
     body: JSON.stringify(body),
+    headers: {
+      "Content-Type": "application/json",
+    },
   });
   const data = (await response.json()) as TLead;
   return data;
@@ -107,6 +141,29 @@ export async function getCheckout(checkoutId: string): Promise<TCheckout> {
   if (response.status !== 200) {
     console.error(await response.text(), response.status);
     throw new Error("Failed to fetch checkout");
+  }
+  const data = (await response.json()) as TCheckout;
+  return data;
+}
+
+export async function updateCheckoutStartingDate(
+  checkoutId: string,
+  fecha_inicio: string
+) {
+  console.log("Updating checkout starting date", checkoutId, fecha_inicio);
+  const response = await fetch(
+    `${API_URL}/checkout/${checkoutId}/fecha-inicio`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ fecha_inicio }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+  if (response.status !== 200) {
+    console.error(await response.text(), response.status);
+    throw new Error("Failed to update checkout");
   }
   const data = (await response.json()) as TCheckout;
   return data;
