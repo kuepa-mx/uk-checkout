@@ -2,8 +2,13 @@ import Link from "next/link";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "./ui/card";
 
-export default function CareerSummaryCard({ career }: { career: TCareer | undefined }) {
+export default function CareerSummaryCard({
+  career,
+}: {
+  career: TCareer | undefined;
+}) {
   if (!career || !career.url_pdf) {
+    console.log("Career summary card not found", career);
     return null;
   }
 
@@ -27,7 +32,12 @@ export default function CareerSummaryCard({ career }: { career: TCareer | undefi
         </p>
       </CardContent>
       <CardFooter>
-        <Link href={career.url_pdf} target="_blank" rel="noopener noreferrer" className="w-full">
+        <Link
+          href={career.url_pdf}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full"
+        >
           <Button
             type="button"
             className="text-xs text-uk-blue-text bg-white hover:bg-white/90 w-full"

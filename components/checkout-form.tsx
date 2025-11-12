@@ -39,7 +39,7 @@ import { format } from "date-fns";
 import PaymentPills, { PaymentPill } from "./payment-pills";
 import CareerSummaryCard from "./career-summary-card";
 import { useCallback, useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn, removeAccents } from "@/lib/utils";
 import { Spinner } from "./ui/spinner";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -81,10 +81,12 @@ function getApertureDateOptions() {
 const schema = yup.object().shape({
   firstName: yup
     .string()
+    .transform(removeAccents)
     .required("El nombre es requerido")
     .matches(/^[a-zA-Z]+$/, "El nombre solo puede contener letras"),
   lastName: yup
     .string()
+    .transform(removeAccents)
     .required("El apellido es requerido")
     .matches(/^[a-zA-Z]+$/, "El apellido solo puede contener letras"),
   career: yup.string().required("La carrera es requerida"),
@@ -113,14 +115,14 @@ export default function CheckoutForm({
   const form = useForm<TCheckoutForm>({
     mode: "onChange",
     reValidateMode: "onChange",
-    defaultValues: {
+    defaultValues: schema.cast({
       firstName: firstName,
       lastName: lastName,
       career: checkout.lead?.carrera?.carrera_id || "",
       startingDate: checkout.selected_fecha_inicio || "",
       discountType: checkout.selected_plan_type || "",
       totalAmount: 0,
-    },
+    }),
     resolver: yupResolver(schema),
   });
 
@@ -227,7 +229,7 @@ export default function CheckoutForm({
       }
 
       const paymentLink = await handleCheckoutSubmission(
-        data,
+        schema.validateSync(data),
         checkout,
         discount,
         career
@@ -459,6 +461,8 @@ function InscriptionDataReviewStep({
           value={`${firstName.toLowerCase()}.${lastName.toLowerCase()}@ukuepa.com`}
         />
       </div>
+
+      <CareerSummaryCard career={careerData} />
 
       <div className="flex flex-col gap-2 mt-4">
         <h2 className="text-sm font-semibold text-uk-blue-text">
