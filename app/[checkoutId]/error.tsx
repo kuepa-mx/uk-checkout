@@ -1,5 +1,6 @@
 "use client";
 
+import WhatsappIcon from "@/components/icons/WhatsappIcon";
 import { Button } from "@/components/ui/button";
 import { AlertCircleIcon, RefreshCcwIcon } from "lucide-react";
 import Image from "next/image";
@@ -78,14 +79,3 @@ export default function Error({
   );
 }
 
-function WhatsappIcon({ className }: { className?: string }) {
-  return (
-    <Image
-      src="/whatsapp-icon.svg"
-      alt="Whatsapp"
-      width={24}
-      height={24}
-      className={className}
-    />
-  );
-}

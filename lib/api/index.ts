@@ -1,7 +1,6 @@
 "use server";
 
 import { TCheckoutForm } from "@/components/checkout-form";
-import { TCheckout } from "../types/checkout";
 
 const API_URL = "https://qa.universidaduk.com";
 
@@ -126,30 +125,6 @@ export async function getCheckout(
   return response;
 }
 
-export async function updateCheckoutStartingDate(
-  checkoutId: string,
-  fecha_inicio: string
-) {
-  console.log("Updating checkout starting date", checkoutId, fecha_inicio);
-  const response = await apiRequest<TCheckout>(
-    `${API_URL}/checkout/${checkoutId}/fecha-inicio`,
-    {
-      method: "PATCH",
-      body: JSON.stringify({ fecha_inicio }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    },
-    {
-      onError: (error) => {
-        console.error("Failed to update checkout starting date", error);
-      },
-    }
-  );
-
-  return response;
-}
-
 type TCreateCheckout = {
   lead_id: string;
   owner_email: string;
@@ -182,7 +157,7 @@ export async function createCheckout({
 
 export async function updateCheckout(
   checkoutId: string,
-  body: DeepPartial<TCheckout>
+  body: TUpdateCheckoutDTO
 ) {
   console.log("Updating checkout", checkoutId, body);
   const response = await apiRequest<TCheckout>(
@@ -213,6 +188,7 @@ export async function computeTotalAmount(
     monto_final: number;
     descuento_porcentaje: number;
     monto_neto: number;
+    monto_cuota: number;
   }>(
     `/checkout/${checkoutId}/calculate-payment?descuento_id=${discountId}`,
     {
@@ -268,7 +244,7 @@ export async function handleCheckoutSubmission(
   discount: TDiscount,
   career: TCareer
 ) {
-  const universityEmail = `${data.firstName.toLowerCase()}.${data.lastName.toLowerCase()}@ukuepa.com`;
+  const universityEmail = `${data.firstName.toLowerCase()}.${data.lastName.toLowerCase()}`;
   // If the lead is from Mexico, use Mercado Pago, otherwise use Flywire
   const paymentMethod =
     checkout.lead.pais.pais_nombre === "Mexico" ? "mercadopago" : "flywire";
@@ -294,7 +270,7 @@ export async function handleCheckoutSubmission(
     grupo: {
       grupo_id: group.grupo_id,
     },
-    status: "En proceso de pago",
+    status: { status_id: "cad8b88f-6c21-4c21-937c-bb9591edc5da" }, // En proceso de pago
     correo_universitario: universityEmail,
     fecha_promesa_pago: new Date().toISOString().split("T")[0],
   });
@@ -315,9 +291,7 @@ export async function handleCheckoutSubmission(
   // Update the checkout
   await updateCheckout(checkout.checkout_id, {
     payment_link: paymentLink.paymentUrl,
-    pago_id: paymentLink.paymentId,
     payment_method: paymentMethod,
-    payment_link_generated_at: new Date().toISOString(),
     checkout_status: "payment_generated",
   });
 

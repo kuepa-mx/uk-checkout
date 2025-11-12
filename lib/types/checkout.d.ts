@@ -6,7 +6,7 @@
 //   "lead_id": "01d72748-2a64-45e1-a092-40ab4dae6950"
 // }
 
-export type TCheckout = {
+declare type TCheckout = {
   checkout_status:
     | "created"
     | "in_progress"
@@ -29,4 +29,14 @@ export type TCheckout = {
   created_at: string;
   updated_at: string;
   paid_at: string | null;
+};
+
+declare type TUpdateCheckoutDTO = {
+  fecha_inicio?: string;
+  selected_plan_type?: string;
+  checkout_status?: TCheckout["checkout_status"];
+  payment_method?: "mercadopago" | "flywire";
+  payment_link?: string;
+  owner_email?: string;
+  agent_name?: string;
 };

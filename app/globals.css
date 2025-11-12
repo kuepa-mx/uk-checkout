@@ -125,6 +125,6 @@
   }
 }
 
-html, body, #__next {
-  height: 100%;
-}
+/* html, body, #__next {
+  min-height: 100%;
+} */

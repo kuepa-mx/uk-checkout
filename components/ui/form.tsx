@@ -149,13 +149,17 @@ function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
   return (
     <Alert
       className={cn(
-        "text-destructive bg-destructive/10 border-destructive/20",
+        "text-destructive bg-destructive/10 border-destructive/20 p-2",
         className
       )}
+      variant="destructive"
       {...props}
     >
       <AlertCircleIcon className="size-4" />
-      <AlertTitle data-slot="alert-title" id={formMessageId}>
+      <AlertTitle
+        id={formMessageId}
+        className="hover:overflow-visible font-normal whitespace-pre-wrap"
+      >
         {body}
       </AlertTitle>
     </Alert>

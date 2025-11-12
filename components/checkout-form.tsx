@@ -26,12 +26,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { FieldLabel } from "@/components/ui/field";
 import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { TCheckout } from "@/lib/types/checkout";
+
 import {
   generatePaymentLink,
   getGroupsByCareerCode,
   handleCheckoutSubmission,
-  updateCheckoutStartingDate,
+  updateCheckout,
   updateLead,
 } from "@/lib/api";
 import { Card, CardContent, CardFooter } from "./ui/card";
@@ -43,6 +43,7 @@ import { cn } from "@/lib/utils";
 import { Spinner } from "./ui/spinner";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { queryClient } from "./providers/query-client-provider";
 
 const APERTURE_DATES = [
   "2025-11-24",
@@ -117,7 +118,7 @@ export default function CheckoutForm({
       lastName: lastName,
       career: checkout.lead?.carrera?.carrera_id || "",
       startingDate: checkout.selected_fecha_inicio || "",
-      discountType: "", // Pago Mensual
+      discountType: checkout.selected_plan_type || "",
       totalAmount: 0,
     },
     resolver: yupResolver(schema),
@@ -131,8 +132,11 @@ export default function CheckoutForm({
     {
       mutationFn: (body: DeepPartial<TLead>) =>
         updateLead(checkout.lead.lead_id, body),
-      onSuccess: (data) => {
-        console.log("Lead actualizada", data);
+      onSuccess: () => {
+        // Invalidate discount price query to recompute the price for the career
+        queryClient.invalidateQueries({
+          queryKey: ["discountPrice"],
+        });
       },
       onError: (error) => {
         console.error(error);
@@ -141,13 +145,15 @@ export default function CheckoutForm({
   );
 
   const {
-    mutate: updateCheckoutStartingDateMutation,
+    mutate: updateCheckoutMutation,
     isPending: isUpdatingCheckoutStartingDate,
   } = useMutation({
-    mutationFn: (fecha_inicio: string) =>
-      updateCheckoutStartingDate(checkout.checkout_id, fecha_inicio),
+    mutationFn: (body: TUpdateCheckoutDTO) =>
+      updateCheckout(checkout.checkout_id, {
+        ...body,
+      }),
     onSuccess: (data) => {
-      console.log("Fecha de inicio actualizada", data);
+      console.log("Checkout actualizado", data);
     },
     onError: (error) => {
       console.error(error);
@@ -155,26 +161,53 @@ export default function CheckoutForm({
   });
 
   useEffect(() => {
-    const unsubscribe = form.subscribe({
-      name: ["startingDate", "career"],
+    const unsubscribeFromCareer = form.subscribe({
+      name: "career",
       formState: {
         values: true,
       },
-      callback: ({ values, defaultValues }) => {
-        if (values.startingDate !== defaultValues?.startingDate) {
-          updateCheckoutStartingDateMutation(values.startingDate);
-        }
-        if (values.career !== defaultValues?.career) {
-          updateLeadMutation({
-            carrera: {
-              carrera_id: values.career,
-            },
-          });
-        }
+      callback: ({ values }) => {
+        updateLeadMutation({
+          carrera: {
+            carrera_id: values.career,
+          },
+        });
       },
     });
-    return () => unsubscribe();
-  }, [form, updateCheckoutStartingDateMutation, updateLeadMutation]);
+
+    const unsubscribeFromStartingDate = form.subscribe({
+      name: "startingDate",
+      formState: {
+        values: true,
+      },
+      callback: ({ values }) => {
+        console.log("Actualizando fecha de inicio", values.startingDate);
+        updateCheckoutMutation({
+          fecha_inicio: values.startingDate,
+          checkout_status: "in_progress",
+        });
+      },
+    });
+
+    const unsubscribeFromDiscountType = form.subscribe({
+      name: "discountType",
+      formState: {
+        values: true,
+      },
+      callback: ({ values }) => {
+        updateCheckoutMutation({
+          selected_plan_type: values.discountType,
+          checkout_status: "in_progress",
+        });
+      },
+    });
+
+    return () => {
+      unsubscribeFromCareer();
+      unsubscribeFromStartingDate();
+      unsubscribeFromDiscountType();
+    };
+  }, [form, updateCheckoutMutation, updateLeadMutation]);
 
   const onSubmit = useCallback<SubmitHandler<TCheckoutForm>>(
     async (data) => {
@@ -185,10 +218,12 @@ export default function CheckoutForm({
         (career) => career.carrera_id === data.career
       );
       if (!career) {
-        throw new Error("Career not found");
+        throw new Error(`Carrera no encontrada para el ID: ${data.career}`);
       }
       if (!discount) {
-        throw new Error("Discount not found");
+        throw new Error(
+          `Descuento no encontrado para el ID: ${data.discountType}`
+        );
       }
 
       const paymentLink = await handleCheckoutSubmission(
@@ -211,9 +246,13 @@ export default function CheckoutForm({
 
   if (formState.isSubmitting) {
     return (
-      <div className="flex items-center gap-4 justify-center h-full grow">
-        <Spinner className="size-6 mx-auto my-auto h-full grow" />
-        Enviando datos...
+      <div className="flex flex-col items-center gap-2 justify-center h-full grow text-center max-w-[80%]">
+        <Spinner className="size-10" />
+        Procesando
+        <br />
+        <span className="text-xs mt-2 whitespace-pre-wrap">
+          Serás redirigido a la página de pago en unos segundos.
+        </span>
       </div>
     );
   }
@@ -241,7 +280,7 @@ export default function CheckoutForm({
       >
         <Card>
           <CardContent className="space-y-2">
-            <div className="flex gap-1 items-start justify-stretch *:flex-1">
+            <div className="flex flex-col md:flex-row gap-1 md:items-start items-stretch justify-stretch *:flex-1">
               <FormField
                 control={form.control}
                 name="firstName"
@@ -275,7 +314,10 @@ export default function CheckoutForm({
                     Carrera
                   </FieldLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger id="career" className="w-full">
+                    <SelectTrigger
+                      id="career"
+                      className="w-full text-ellipsis overflow-hidden"
+                    >
                       <SelectValue placeholder="Selecciona una carrera" />
                     </SelectTrigger>
                     <SelectContent>
@@ -407,24 +449,33 @@ function InscriptionDataReviewStep({
           value={`${careerData?.carrera_codigo}_${startingDate}`}
         />
       </div>
-      <Field
-        label="Fecha de inicio"
-        value={format(new Date(`${startingDate}T00:00:00`), "dd/MM/yyyy")}
-      />
-      <Field
-        label="Correo universitario"
-        value={`${firstName.toLowerCase()}.${lastName.toLowerCase()}@ukuepa.com`}
-      />
+      <div className="flex gap-1 items-start justify-stretch *:flex-1">
+        <Field
+          label="Fecha de inicio"
+          value={format(new Date(`${startingDate}T00:00:00`), "dd/MM/yyyy")}
+        />
+        <Field
+          label="Correo universitario"
+          value={`${firstName.toLowerCase()}.${lastName.toLowerCase()}@ukuepa.com`}
+        />
+      </div>
 
-      <PaymentPill
-        key={discountType}
-        discount={
-          discounts.find((discount) => discount.descuento_id === discountType)!
-        }
-        checkoutId={checkout.checkout_id}
-        career={careerData!}
-        control={form.control}
-      />
+      <div className="flex flex-col gap-2 mt-4">
+        <h2 className="text-sm font-semibold text-uk-blue-text">
+          Plan de pago
+        </h2>
+        <PaymentPill
+          key={discountType}
+          discount={
+            discounts.find(
+              (discount) => discount.descuento_id === discountType
+            )!
+          }
+          checkoutId={checkout.checkout_id}
+          career={careerData!}
+          control={form.control}
+        />
+      </div>
 
       <div className="flex flex-col gap-2 mt-auto">
         <Button type="button" onClick={onPrevClick} variant="outline">
@@ -450,7 +501,7 @@ const Field = ({
   value: string | undefined;
 }) => (
   <div className="flex flex-col gap-0.5">
-    <p className="text-sm text-uk-blue-text/80">{label}</p>
-    <p className="text-base font-medium text-uk-blue-text">{value ?? "-"}</p>
+    <p className="text-xs text-uk-blue-text/90">{label}</p>
+    <p className="text-sm font-medium text-uk-blue-text">{value ?? "-"}</p>
   </div>
 );

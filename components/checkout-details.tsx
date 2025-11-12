@@ -1,5 +1,3 @@
-import { TCheckout } from "@/lib/types/checkout";
-
 // Component when the checkout is "payment_generated" or "paid"
 export default function CheckoutDetails({ checkout }: { checkout: TCheckout }) {
   if (

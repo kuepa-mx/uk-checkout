@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import QueryClientProvider from "@/components/providers/query-client-provider";
+import WhatsappBtn from "@/components/whatsapp-btn";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,6 +34,9 @@ export default function RootLayout({
           <ThemeProvider attribute="class" defaultTheme="light">
             {children}
           </ThemeProvider>
+          <div className="fixed bottom-1 right-1">
+            <WhatsappBtn />
+          </div>
         </QueryClientProvider>
       </body>
     </html>

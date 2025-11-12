@@ -83,10 +83,15 @@ export const PaymentPill = ({
   control: Control<TCheckoutForm>;
 }) => {
   const selectedDiscountId = useWatch({ name: "discountType", control });
-  const { price, isLoading } = useDiscountPrice(
+  const { price, isLoading, isPending, isStale } = useDiscountPrice(
     checkoutId,
     discount.descuento_id
   );
+
+  const installments = Number(
+    discount.descuento_cuotas ?? career.cuenta.cuenta_cantidad_cuotas
+  );
+
   const planData = {
     id: discount.descuento_id,
     label: capitalize(discount.descuento_nombre),
@@ -95,35 +100,36 @@ export const PaymentPill = ({
         ? `${Number(discount.descuento_porcentaje) * 100}% de descuento`
         : "Inscripción inmediata",
 
-    net_price:
-      (price?.monto_neto ?? 0) *
-      Number(discount.descuento_cuotas ?? career.cuenta.cuenta_cantidad_cuotas),
+    net_price: (price?.monto_cuota ?? 0) * installments,
     price:
-      (price?.monto_final ?? 0) *
-      Number(discount.descuento_cuotas ?? career.cuenta.cuenta_cantidad_cuotas),
+      (price?.monto_cuota ?? 0) *
+      installments *
+      (1 - Number(price?.descuento_porcentaje ?? 0)),
     discount: Number(price?.descuento_porcentaje ?? 0),
   };
 
+  const loading = isLoading || isPending || isStale;
+
   return (
     <button
-      disabled={isLoading}
+      disabled={loading}
       onClick={() => onClick?.(planData.price)}
       key={discount.descuento_id}
       type="button"
       className={
-        "flex items-center justify-between gap-2 rounded-2xl border px-3 py-3 text-left transition hover:bg-uk-blue-text/10 hover:text-uk-blue-text" +
+        "rounded-2xl border px-3 py-3 text-left transition hover:bg-uk-blue-text/10 hover:text-uk-blue-text" +
         (selectedDiscountId === discount.descuento_id
           ? "border-[#FF7A00]! bg-[#FF7A00]! text-white! shadow-md!"
           : "border-[#0B1F3A]/15 bg-white text-[#0B1F3A]") +
         (spanDoubleColumn ? " sm:col-span-2" : "")
       }
     >
-      {isLoading ? (
+      {loading ? (
         <>
-          <Spinner className="size-6 animate-spin mx-auto my-auto" />{" "}
+          <Spinner className="size-7 animate-spin mx-auto my-auto fade-out" />{" "}
         </>
       ) : (
-        <>
+        <div className="animate-in slide-in-from-bottom-2 duration-300 fade-in flex items-center justify-between gap-2">
           <div className="flex flex-col leading-tight">
             <span className="text-[14px] font-semibold">{planData.label}</span>
             <span className="text-[10px] opacity-85">{planData.subtitle}</span>
@@ -138,7 +144,7 @@ export const PaymentPill = ({
               {currencyFormatter.format(planData.price)}
             </span>
           </div>
-        </>
+        </div>
       )}
     </button>
   );

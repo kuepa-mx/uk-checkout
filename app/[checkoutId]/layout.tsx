@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 
 export default function CheckoutLayout({
@@ -7,7 +7,7 @@ export default function CheckoutLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-2 items-center justify-center min-h-full">
+    <div className="flex flex-col gap-2 items-center justify-center min-h-full mt-4 mb-14 overflow-auto">
       <Image
         src="/logo.png"
         alt="UK Logo"
@@ -15,7 +15,7 @@ export default function CheckoutLayout({
         height={80}
         className="mb-1"
       />
-      <Card className="max-w-md min-w-xs min-h-[500px] mx-2 relative overflow-hidden">
+      <Card className="max-w-md min-w-xs min-h-[500px] relative overflow-hidden">
         <div className="absolute inset-x-0 top-0 h-1.5 bg-linear-to-r from-[#FF7A00] via-[#FF9F40] to-[#FF7A00]" />
 
         <CardContent className="flex flex-col items-center h-full grow">
