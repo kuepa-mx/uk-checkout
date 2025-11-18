@@ -7,7 +7,7 @@ export default function CheckoutLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-2 items-center justify-center min-h-full mt-4 mb-14 overflow-hidden">
+    <div className="flex flex-col gap-2 items-center justify-center min-h-full my-4 mb-14 overflow-y-auto">
       <Image
         src="/logo.png"
         alt="UK Logo"

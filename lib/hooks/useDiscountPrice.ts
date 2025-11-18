@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { computeTotalAmount } from "../api";
+import { computeTotalAmount } from "@/lib/api/features/checkout";
 
 export default function useDiscountPrice(
   checkoutId: string,

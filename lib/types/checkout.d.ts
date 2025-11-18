@@ -32,11 +32,15 @@ declare type TCheckout = {
 };
 
 declare type TUpdateCheckoutDTO = {
-  fecha_inicio?: string;
+  pago?: {
+    pago_id: string;
+  };
+  selected_fecha_inicio?: string;
   selected_plan_type?: string;
   checkout_status?: TCheckout["checkout_status"];
   payment_method?: "mercadopago" | "flywire";
   payment_link?: string;
   owner_email?: string;
   agent_name?: string;
+  payment_link_generated_at?: string;
 };

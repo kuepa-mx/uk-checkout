@@ -3,7 +3,6 @@ import {
   useForm,
   SubmitHandler,
   useWatch,
-  useFormContext,
   UseFormReturn,
   useFormState,
 } from "react-hook-form";
@@ -17,33 +16,26 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import {
-  ArrowLeftIcon,
-  Calendar,
-  CheckCheckIcon,
-  GraduationCap,
-} from "lucide-react";
+import { Calendar, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FieldLabel } from "@/components/ui/field";
 import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
 
-import {
-  generatePaymentLink,
-  getGroupsByCareerCode,
-  handleCheckoutSubmission,
-  updateCheckout,
-  updateLead,
-} from "@/lib/api";
-import { Card, CardContent, CardFooter } from "./ui/card";
+import { updateCheckout } from "@/lib/api/features/checkout";
+import { Card, CardContent } from "./ui/card";
 import { format } from "date-fns";
 import PaymentPills, { PaymentPill } from "./payment-pills";
 import CareerSummaryCard from "./career-summary-card";
 import { useCallback, useEffect, useState } from "react";
-import { cn, removeAccents } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { Spinner } from "./ui/spinner";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { queryClient } from "./providers/query-client-provider";
+import { checkoutFormSchema } from "@/lib/api/schemas";
+import { handleCheckoutSubmission } from "@/lib/actions/checkout";
+import { update } from "@/lib/api/features/entity";
+import { Entity } from "@/lib/api/enum/entity";
 
 const APERTURE_DATES = [
   "2025-11-24",
@@ -78,27 +70,7 @@ function getApertureDateOptions() {
   }));
 }
 
-const schema = yup.object().shape({
-  firstName: yup
-    .string()
-    .transform(removeAccents)
-    .required("El nombre es requerido")
-    .matches(/^[a-zA-Z]+$/, "El nombre solo puede contener letras"),
-  lastName: yup
-    .string()
-    .transform(removeAccents)
-    .required("El apellido es requerido")
-    .matches(/^[a-zA-Z]+$/, "El apellido solo puede contener letras"),
-  career: yup.string().required("La carrera es requerida"),
-  startingDate: yup.string().required("La fecha de inicio es requerida"),
-  discountType: yup
-    .string()
-    .required("El plan de pago es requerido")
-    .min(1, "El plan de pago es requerido"),
-  totalAmount: yup.number().required("El monto total es requerido"),
-});
-
-export type TCheckoutForm = yup.InferType<typeof schema>;
+export type TCheckoutForm = yup.InferType<typeof checkoutFormSchema>;
 
 export default function CheckoutForm({
   careers,
@@ -115,7 +87,7 @@ export default function CheckoutForm({
   const form = useForm<TCheckoutForm>({
     mode: "onChange",
     reValidateMode: "onChange",
-    defaultValues: schema.cast({
+    defaultValues: checkoutFormSchema.cast({
       firstName: firstName,
       lastName: lastName,
       career: checkout.lead?.carrera?.carrera_id || "",
@@ -123,7 +95,7 @@ export default function CheckoutForm({
       discountType: checkout.selected_plan_type || "",
       totalAmount: 0,
     }),
-    resolver: yupResolver(schema),
+    resolver: yupResolver(checkoutFormSchema),
   });
 
   const selectedCareerId = useWatch({ name: "career", control: form.control });
@@ -133,7 +105,7 @@ export default function CheckoutForm({
   const { mutate: updateLeadMutation, isPending: isUpdatingLead } = useMutation(
     {
       mutationFn: (body: DeepPartial<TLead>) =>
-        updateLead(checkout.lead.lead_id, body),
+        update<TLead>(Entity.LEAD, checkout.lead.lead_id, body),
       onSuccess: () => {
         // Invalidate discount price query to recompute the price for the career
         queryClient.invalidateQueries({
@@ -151,12 +123,7 @@ export default function CheckoutForm({
     isPending: isUpdatingCheckoutStartingDate,
   } = useMutation({
     mutationFn: (body: TUpdateCheckoutDTO) =>
-      updateCheckout(checkout.checkout_id, {
-        ...body,
-      }),
-    onSuccess: (data) => {
-      console.log("Checkout actualizado", data);
-    },
+      updateCheckout(checkout.checkout_id, body),
     onError: (error) => {
       console.error(error);
     },
@@ -185,7 +152,7 @@ export default function CheckoutForm({
       callback: ({ values }) => {
         console.log("Actualizando fecha de inicio", values.startingDate);
         updateCheckoutMutation({
-          fecha_inicio: values.startingDate,
+          selected_fecha_inicio: values.startingDate,
           checkout_status: "in_progress",
         });
       },
@@ -229,7 +196,7 @@ export default function CheckoutForm({
       }
 
       const paymentLink = await handleCheckoutSubmission(
-        schema.validateSync(data),
+        checkoutFormSchema.cast(data),
         checkout,
         discount,
         career
@@ -323,18 +290,14 @@ export default function CheckoutForm({
                       <SelectValue placeholder="Selecciona una carrera" />
                     </SelectTrigger>
                     <SelectContent>
-                      {careers
-                        .sort((a, b) =>
-                          a.carrera_nombre.localeCompare(b.carrera_nombre)
-                        )
-                        .map((career) => (
-                          <SelectItem
-                            key={career.carrera_id}
-                            value={career.carrera_id}
-                          >
-                            {career.carrera_nombre}
-                          </SelectItem>
-                        ))}
+                      {careers.map((career) => (
+                        <SelectItem
+                          key={career.carrera_id}
+                          value={career.carrera_id}
+                        >
+                          {career.carrera_nombre}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -399,12 +362,18 @@ export default function CheckoutForm({
               "Siguiente"
             )}
           </Button>
-          <p className="text-[10px] text-uk-blue-text/70 text-center">
-            Al continuar aceptas los términos y el aviso de privacidad.
-          </p>
+          <FormSubtitle />
         </div>
       </form>
     </Form>
+  );
+}
+
+function FormSubtitle() {
+  return (
+    <p className="text-[10px] text-uk-blue-text/70 text-center">
+      Al continuar aceptas los términos y el aviso de privacidad.
+    </p>
   );
 }
 
@@ -493,6 +462,7 @@ function InscriptionDataReviewStep({
           Confirmar y pagar
         </Button>
       </div>
+      <FormSubtitle />
     </div>
   );
 }

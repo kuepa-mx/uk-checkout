@@ -1,7 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createCheckout } from "@/lib/api";
+import { createCheckoutDTO, TCreateCheckoutDTO } from "@/lib/api/dto/checkout";
+import { Entity } from "@/lib/api/enum/entity";
+import { create } from "@/lib/api/features/entity";
 import { redirect } from "next/navigation";
 
 const isDev = process.env.NODE_ENV === "development";
@@ -27,7 +29,10 @@ export default function Home() {
             lead_id: fd.get("lead_id") as string,
             owner_email: fd.get("owner_email") as string,
           };
-          const checkout = await createCheckout(body);
+          const checkout = await create<TCheckout, TCreateCheckoutDTO>(
+            Entity.CHECKOUT,
+            createCheckoutDTO.validateSync(body)
+          );
           redirect(`/checkout/${checkout.checkout_id}`);
         }}
       >
