@@ -3,7 +3,6 @@ import {
   useForm,
   SubmitHandler,
   useWatch,
-  UseFormReturn,
   useFormState,
 } from "react-hook-form";
 import * as yup from "yup";
@@ -21,21 +20,22 @@ import { Button } from "@/components/ui/button";
 import { FieldLabel } from "@/components/ui/field";
 import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
 
-import { updateCheckout } from "@/lib/api/features/checkout";
+import { updateCheckout } from "@/app/actions/checkout";
 import { Card, CardContent } from "./ui/card";
 import { format } from "date-fns";
-import PaymentPills, { PaymentPill } from "./payment-pills";
+import PaymentPills from "./payment-pills";
+import { TPaymentPillProps } from "./payment-pill";
 import CareerSummaryCard from "./career-summary-card";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { cn } from "@/lib/utils";
 import { Spinner } from "./ui/spinner";
-import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { queryClient } from "./providers/query-client-provider";
 import { checkoutFormSchema } from "@/lib/api/schemas";
 import { handleCheckoutSubmission } from "@/lib/actions/checkout";
 import { update } from "@/lib/api/features/entity";
 import { Entity } from "@/lib/api/enum/entity";
+import InscriptionDataReviewStep from "./checkout-confirmation";
+import FormSubtitle from "./checkout-form-subtitle";
 
 const APERTURE_DATES = [
   "2025-11-24",
@@ -76,10 +76,12 @@ export default function CheckoutForm({
   careers,
   discounts,
   checkout,
+  paymentOptions,
 }: {
   careers: TCareer[];
   discounts: TDiscount[];
   checkout: TCheckout;
+  paymentOptions: TPaymentPillProps[];
 }) {
   const router = useRouter();
   const [firstName = "", lastName = ""] =
@@ -93,90 +95,43 @@ export default function CheckoutForm({
       career: checkout.lead?.carrera?.carrera_id || "",
       startingDate: checkout.selected_fecha_inicio || "",
       discountType: checkout.selected_plan_type || "",
-      totalAmount: 0,
+      totalAmount:
+        paymentOptions.find(
+          (option) => option.id === checkout.selected_plan_type
+        )?.final_price || 0,
     }),
     resolver: yupResolver(checkoutFormSchema),
   });
 
   const selectedCareerId = useWatch({ name: "career", control: form.control });
   const formState = useFormState({ control: form.control });
-  const [confirmationStep, setConfirmationStep] = useState(false);
-
-  const { mutate: updateLeadMutation, isPending: isUpdatingLead } = useMutation(
-    {
-      mutationFn: (body: DeepPartial<TLead>) =>
-        update<TLead>(Entity.LEAD, checkout.lead.lead_id, body),
-      onSuccess: () => {
-        // Invalidate discount price query to recompute the price for the career
-        queryClient.invalidateQueries({
-          queryKey: ["discountPrice"],
-        });
-      },
-      onError: (error) => {
-        console.error(error);
-      },
-    }
-  );
-
-  const {
-    mutate: updateCheckoutMutation,
-    isPending: isUpdatingCheckoutStartingDate,
-  } = useMutation({
-    mutationFn: (body: TUpdateCheckoutDTO) =>
-      updateCheckout(checkout.checkout_id, body),
-    onError: (error) => {
-      console.error(error);
-    },
+  const discountType = useWatch({
+    name: "discountType",
+    control: form.control,
   });
+  const [confirmationStep, setConfirmationStep] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    const unsubscribeFromCareer = form.subscribe({
-      name: "career",
-      formState: {
-        values: true,
-      },
-      callback: ({ values }) => {
-        updateLeadMutation({
-          carrera: {
-            carrera_id: values.career,
-          },
-        });
-      },
-    });
-
-    const unsubscribeFromStartingDate = form.subscribe({
-      name: "startingDate",
-      formState: {
-        values: true,
-      },
-      callback: ({ values }) => {
-        console.log("Actualizando fecha de inicio", values.startingDate);
-        updateCheckoutMutation({
-          selected_fecha_inicio: values.startingDate,
-          checkout_status: "in_progress",
-        });
-      },
-    });
-
     const unsubscribeFromDiscountType = form.subscribe({
       name: "discountType",
       formState: {
         values: true,
       },
       callback: ({ values }) => {
-        updateCheckoutMutation({
-          selected_plan_type: values.discountType,
-          checkout_status: "in_progress",
+        startTransition(async () => {
+          await updateCheckout(checkout.checkout_id, {
+            selected_plan_type: values.discountType,
+            checkout_status: "in_progress",
+          });
         });
       },
     });
 
     return () => {
-      unsubscribeFromCareer();
-      unsubscribeFromStartingDate();
       unsubscribeFromDiscountType();
     };
-  }, [form, updateCheckoutMutation, updateLeadMutation]);
+  }, [form, checkout.checkout_id]);
 
   const onSubmit = useCallback<SubmitHandler<TCheckoutForm>>(
     async (data) => {
@@ -210,8 +165,7 @@ export default function CheckoutForm({
     [careers, discounts, checkout, router]
   );
 
-  const isLoading =
-    formState.isSubmitting || isUpdatingCheckoutStartingDate || isUpdatingLead;
+  const isLoading = formState.isSubmitting || isPending;
 
   if (formState.isSubmitting) {
     return (
@@ -229,12 +183,15 @@ export default function CheckoutForm({
   if (confirmationStep)
     return (
       <InscriptionDataReviewStep
-        checkout={checkout}
         form={form}
         onPrevClick={() => setConfirmationStep(false)}
         onConfirmClick={form.handleSubmit(onSubmit)}
-        discounts={discounts}
-        careers={careers}
+        career={careers.find(
+          (career) => career.carrera_id === selectedCareerId
+        )}
+        selectedPaymentOption={paymentOptions.find(
+          (option) => option.id === discountType
+        )}
       />
     );
 
@@ -278,11 +235,25 @@ export default function CheckoutForm({
               name="career"
               render={({ field }) => (
                 <FormItem>
-                  <FieldLabel htmlFor="career">
-                    <GraduationCap className="size-4" />
-                    Carrera
-                  </FieldLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <FieldLabel htmlFor="career">Carrera</FieldLabel>
+                  <Select
+                    onValueChange={(value) => {
+                      startTransition(async () => {
+                        field.onChange(value);
+                        await update<TLead>(
+                          Entity.LEAD,
+                          checkout.lead.lead_id,
+                          {
+                            carrera: {
+                              carrera_id: value,
+                            },
+                          }
+                        );
+                        router.refresh();
+                      });
+                    }}
+                    value={field.value}
+                  >
                     <SelectTrigger
                       id="career"
                       className="w-full text-ellipsis overflow-hidden"
@@ -310,10 +281,20 @@ export default function CheckoutForm({
               render={({ field }) => (
                 <FormItem>
                   <FieldLabel htmlFor="starting-date">
-                    <Calendar className="size-4" />
                     Fecha de inicio
                   </FieldLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select
+                    onValueChange={(value) => {
+                      startTransition(async () => {
+                        field.onChange(value);
+                        await updateCheckout(checkout.checkout_id, {
+                          selected_fecha_inicio: value,
+                          checkout_status: "in_progress",
+                        });
+                      });
+                    }}
+                    value={field.value}
+                  >
                     <SelectTrigger id="starting-date" className="w-full">
                       <SelectValue placeholder="Selecciona una fecha" />
                     </SelectTrigger>
@@ -329,18 +310,12 @@ export default function CheckoutForm({
                 </FormItem>
               )}
             />
-
-            <CareerSummaryCard
-              career={careers.find(
-                (career) => career.carrera_id === selectedCareerId
-              )}
-            />
           </CardContent>
         </Card>
 
-        <PaymentPills
-          discounts={discounts}
-          checkoutId={checkout.checkout_id}
+        <PaymentPills paymentOptions={paymentOptions} />
+
+        <CareerSummaryCard
           career={careers.find(
             (career) => career.carrera_id === selectedCareerId
           )}
@@ -368,114 +343,3 @@ export default function CheckoutForm({
     </Form>
   );
 }
-
-function FormSubtitle() {
-  return (
-    <p className="text-[10px] text-uk-blue-text/70 text-center">
-      Al continuar aceptas los términos y el aviso de privacidad.
-    </p>
-  );
-}
-
-function InscriptionDataReviewStep({
-  checkout,
-  form,
-  onPrevClick,
-  onConfirmClick,
-  discounts,
-  careers,
-}: {
-  checkout: TCheckout;
-  form: UseFormReturn<TCheckoutForm>;
-  onPrevClick: () => void;
-  onConfirmClick: () => void;
-  discounts: TDiscount[];
-  careers: TCareer[];
-}) {
-  const firstName = useWatch({ name: "firstName", control: form.control });
-  const lastName = useWatch({ name: "lastName", control: form.control });
-  const career = useWatch({ name: "career", control: form.control });
-  const startingDate = useWatch({
-    name: "startingDate",
-    control: form.control,
-  });
-  const discountType = useWatch({
-    name: "discountType",
-    control: form.control,
-  });
-  const formState = useFormState({ control: form.control });
-
-  const careerData = careers.find(({ carrera_id }) => carrera_id === career);
-
-  return (
-    <div className="flex flex-col gap-4 h-full grow">
-      <div className="flex gap-1 items-start justify-stretch *:flex-1">
-        <Field label="Nombre" value={firstName} />
-        <Field label="Apellido" value={lastName} />
-      </div>
-      <div className="flex gap-1 items-start justify-stretch *:flex-1">
-        <Field label="Carrera" value={careerData?.carrera_nombre} />
-        <Field
-          label="Grupo"
-          value={`${careerData?.carrera_codigo}_${startingDate}`}
-        />
-      </div>
-      <div className="flex gap-1 items-start justify-stretch *:flex-1">
-        <Field
-          label="Fecha de inicio"
-          value={format(new Date(`${startingDate}T00:00:00`), "dd/MM/yyyy")}
-        />
-        <Field
-          label="Correo universitario"
-          value={`${firstName.toLowerCase()}.${lastName.toLowerCase()}@ukuepa.com`}
-        />
-      </div>
-
-      <CareerSummaryCard career={careerData} />
-
-      <div className="flex flex-col gap-2 mt-4">
-        <h2 className="text-sm font-semibold text-uk-blue-text">
-          Plan de pago
-        </h2>
-        <PaymentPill
-          key={discountType}
-          discount={
-            discounts.find(
-              (discount) => discount.descuento_id === discountType
-            )!
-          }
-          checkoutId={checkout.checkout_id}
-          career={careerData!}
-          control={form.control}
-        />
-      </div>
-
-      <div className="flex flex-col gap-2 mt-auto">
-        <Button type="button" onClick={onPrevClick} variant="outline">
-          Volver
-        </Button>
-        <Button
-          type="submit"
-          onClick={onConfirmClick}
-          disabled={formState.isSubmitting}
-        >
-          Confirmar y pagar
-        </Button>
-      </div>
-      <FormSubtitle />
-    </div>
-  );
-}
-
-const Field = ({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | undefined;
-}) => (
-  <div className="flex flex-col gap-0.5">
-    <p className="text-xs text-uk-blue-text/90">{label}</p>
-    <p className="text-sm font-medium text-uk-blue-text">{value ?? "-"}</p>
-  </div>
-);

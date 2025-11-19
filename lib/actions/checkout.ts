@@ -4,7 +4,7 @@ import { getCareerCost } from "@/lib/api/features/career";
 import { generatePaymentLink } from "@/lib/api";
 import { update } from "@/lib/api/features/entity";
 import { Entity } from "@/lib/api/enum/entity";
-import { updateCheckout } from "../api/features/checkout";
+import { updateCheckout } from "@/app/actions/checkout";
 
 export async function handleCheckoutSubmission(
   data: TCheckoutForm,

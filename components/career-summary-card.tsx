@@ -41,14 +41,9 @@ export default function CareerSummaryCard({
   return (
     <Card className="bg-uk-blue-text">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-white">
-            Resumen del programa
-          </p>
-          <span className="text-xs bg-white/10 rounded-md px-2 py-0.5 text-white">
-            2 min
-          </span>
-        </div>
+        <p className="text-sm font-semibold text-white">
+          Beneficios de programa
+        </p>
       </CardHeader>
       <CardContent>
         {/* <p className="text-[11px] leading-snug text-white/90 line-clamp-3">
@@ -57,10 +52,15 @@ export default function CareerSummaryCard({
           continuas para impulsar tu empleabilidad.
         </p> */}
         <div>
-          <ScrollArea className="h-40 rounded-md border border-white/10" scrollHideDelay={0}>
-            <ul className="text-sm font-medium leading-snug text-white/90 ml-6 pr-4 grid grid-cols-1 md:grid-cols-1 gap-x-8 gap-y-2 list-disc list-outside">
+          <ScrollArea
+            className="h-40 rounded-md border border-white/20 bg-white/5 max-"
+            scrollHideDelay={0}
+          >
+            <ul className="text-xs font-medium leading-relaxed text-white ml-6 pr-4 py-2 space-y-1 list-disc list-outside">
               {bullets.map((bullet) => (
-                <li key={bullet}>{bullet}</li>
+                <li key={bullet} className="text-white/95">
+                  {bullet}
+                </li>
               ))}
             </ul>
             <ScrollBar />
@@ -78,7 +78,7 @@ export default function CareerSummaryCard({
             type="button"
             className="text-sm text-uk-blue-text bg-white hover:bg-white/90 w-full"
           >
-            Ver temario rápido
+            Ver temario
           </Button>
         </Link>
       </CardFooter>

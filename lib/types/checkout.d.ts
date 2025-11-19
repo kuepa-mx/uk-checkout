@@ -43,4 +43,6 @@ declare type TUpdateCheckoutDTO = {
   owner_email?: string;
   agent_name?: string;
   payment_link_generated_at?: string;
+  checkout_url?: string;
+  
 };

@@ -1,64 +1,48 @@
-import { capitalize } from "@/lib/utils";
-import { Control, useFormContext, useWatch } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
 import { TCheckoutForm } from "./checkout-form";
-import useDiscountPrice from "@/lib/hooks/useDiscountPrice";
-import { Spinner } from "./ui/spinner";
 import { FormField, FormItem, FormMessage } from "./ui/form";
-
-const currencyFormatter = new Intl.NumberFormat("es-AR", {
-  style: "currency",
-  currency: "ARS",
-});
+import { PaymentPill, TPaymentPillProps } from "./payment-pill";
 
 export default function PaymentPills({
-  discounts,
-  checkoutId,
-  career,
+  paymentOptions,
 }: {
-  discounts: TDiscount[];
-  checkoutId: string;
-  career?: TCareer;
+  paymentOptions: TPaymentPillProps[];
 }) {
   const { control, setValue } = useFormContext<TCheckoutForm>();
-  const plans = discounts.sort(
-    (a, b) =>
-      Number(a.descuento_cuotas ?? Infinity) -
-      Number(b.descuento_cuotas ?? Infinity)
-  );
   return (
     <FormField
       control={control}
       name="discountType"
       render={({ field }) => (
-        <FormItem className="my-2">
-          <h2 className="sr-only">Opciones de pago</h2>
+        <FormItem className="space-y-1">
+          <h2 className="text-sm font-semibold text-uk-blue-text ml-2">
+            Opciones de pago
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {career ? (
-              <>
-                {plans.map((plan, idx) => (
-                  <PaymentPill
-                    control={control}
-                    key={plan.descuento_id}
-                    discount={plan}
-                    checkoutId={checkoutId}
-                    career={career}
-                    spanDoubleColumn={idx % 3 === 0}
-                    onClick={(price) => {
-                      field.onChange(plan.descuento_id, {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                        shouldTouch: true,
-                      });
-                      setValue("totalAmount", price, {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                        shouldTouch: true,
-                      });
-                    }}
-                  />
-                ))}
-              </>
-            ) : null}
+            {paymentOptions.map((plan, idx) => (
+              <PaymentPill
+                id={plan.id}
+                label={plan.label}
+                subtitle={plan.subtitle}
+                original_price={plan.original_price}
+                final_price={plan.final_price}
+                key={plan.id}
+                spanDoubleColumn={idx % 3 === 0}
+                isSelected={field.value === plan.id}
+                onClick={() => {
+                  field.onChange(plan.id, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                    shouldTouch: true,
+                  });
+                  setValue("totalAmount", plan.final_price, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                    shouldTouch: true,
+                  });
+                }}
+              />
+            ))}
           </div>
           <FormMessage />
         </FormItem>
@@ -66,86 +50,3 @@ export default function PaymentPills({
     />
   );
 }
-
-export const PaymentPill = ({
-  discount,
-  checkoutId,
-  career,
-  onClick,
-  spanDoubleColumn,
-  control,
-}: {
-  discount: TDiscount;
-  checkoutId: string;
-  career: TCareer;
-  spanDoubleColumn?: boolean;
-  onClick?: (price: number) => void;
-  control: Control<TCheckoutForm>;
-}) => {
-  const selectedDiscountId = useWatch({ name: "discountType", control });
-  const { price, isLoading, isPending, isStale } = useDiscountPrice(
-    checkoutId,
-    discount.descuento_id
-  );
-
-  const installments = Number(
-    discount.descuento_cuotas ?? career.cuenta.cuenta_cantidad_cuotas
-  );
-
-  const planData = {
-    id: discount.descuento_id,
-    label: capitalize(discount.descuento_nombre),
-    subtitle:
-      Number(discount.descuento_porcentaje) > 0
-        ? `${Number(discount.descuento_porcentaje) * 100}% de descuento`
-        : "Inscripción inmediata",
-
-    net_price: (price?.monto_cuota ?? 0) * installments,
-    price:
-      (price?.monto_cuota ?? 0) *
-      installments *
-      (1 - Number(price?.descuento_porcentaje ?? 0)),
-    discount: Number(price?.descuento_porcentaje ?? 0),
-  };
-
-  const loading = isLoading || isPending || isStale;
-
-  return (
-    <button
-      disabled={loading}
-      onClick={() => onClick?.(planData.price)}
-      key={discount.descuento_id}
-      type="button"
-      className={
-        "rounded-2xl border px-3 py-3 text-left transition hover:bg-uk-blue-text/10 hover:text-uk-blue-text" +
-        (selectedDiscountId === discount.descuento_id
-          ? "border-[#FF7A00]! bg-[#FF7A00]! text-white! shadow-md!"
-          : "border-[#0B1F3A]/15 bg-white text-[#0B1F3A]") +
-        (spanDoubleColumn ? " sm:col-span-2" : "")
-      }
-    >
-      {loading ? (
-        <>
-          <Spinner className="size-7 animate-spin mx-auto my-auto fade-out" />{" "}
-        </>
-      ) : (
-        <div className="animate-in slide-in-from-bottom-2 duration-300 fade-in flex items-center justify-between gap-2">
-          <div className="flex flex-col leading-tight">
-            <span className="text-[14px] font-semibold">{planData.label}</span>
-            <span className="text-[10px] opacity-85">{planData.subtitle}</span>
-          </div>
-          <div className="flex flex-col">
-            {planData.net_price !== planData.price && (
-              <span className="text-[10px] leading-2 font-semibold line-through text-center ">
-                {currencyFormatter.format(planData.net_price)}
-              </span>
-            )}
-            <span className="text-base leading-4 font-bold">
-              {currencyFormatter.format(planData.price)}
-            </span>
-          </div>
-        </div>
-      )}
-    </button>
-  );
-};

@@ -1,10 +1,14 @@
 "use server";
 
 import { api } from "@/lib/http";
+import { cacheTag, revalidateTag } from "next/cache";
 
 export async function getCheckout(
   checkoutId: string
 ): Promise<TCheckout | null> {
+  "use cache";
+  cacheTag(`checkout:${checkoutId}`);
+  console.log("Getting checkout", checkoutId);
   const { data } = await api
     .get<TCheckout | null>(`/checkout/${checkoutId}`)
     .catch(() => {
@@ -25,6 +29,8 @@ export async function updateCheckout(
     },
   });
   console.log("Updated checkout", data);
+  revalidateTag(`checkout:${checkoutId}`, "max");
+
   return data;
 }
 
@@ -40,3 +46,7 @@ export async function computeTotalAmount(
   }>(`/checkout/${checkoutId}/calculate-payment?descuento_id=${discountId}`);
   return data;
 }
+
+export type TCalculatePaymentResponse = Awaited<
+  ReturnType<typeof computeTotalAmount>
+>;
