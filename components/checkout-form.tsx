@@ -30,8 +30,8 @@ import { cn } from "@/lib/utils";
 import { Spinner } from "./ui/spinner";
 import { useRouter } from "next/navigation";
 import { checkoutFormSchema } from "@/lib/api/schemas";
-import { handleCheckoutSubmission } from "@/lib/actions/checkout";
-import { update } from "@/lib/api/features/entity";
+import { handleCheckoutSubmission } from "@/app/actions/checkout";
+import { update } from "@/app/actions/entity";
 import { Entity } from "@/lib/enum/entity";
 import InscriptionDataReviewStep from "./checkout-confirmation";
 import FormSubtitle from "./checkout-form-subtitle";
@@ -237,6 +237,7 @@ export default function CheckoutForm({
                   <FormItem>
                     <FieldLabel htmlFor="career">Carrera</FieldLabel>
                     <Select
+                      {...field}
                       onValueChange={(value) => {
                         startTransition(async () => {
                           field.onChange(value);
@@ -295,7 +296,12 @@ export default function CheckoutForm({
                       }}
                       value={field.value}
                     >
-                      <SelectTrigger id="starting-date" className="w-full">
+                      <SelectTrigger
+                        id="starting-date"
+                        className={cn("w-full")}
+                        data-error={!!formState.errors.startingDate}
+                        aria-invalid={!!formState.errors.startingDate}
+                      >
                         <SelectValue placeholder="Selecciona una fecha" />
                       </SelectTrigger>
                       <SelectContent>

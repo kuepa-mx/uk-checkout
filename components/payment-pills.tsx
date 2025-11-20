@@ -2,6 +2,7 @@ import { useFormContext } from "react-hook-form";
 import { TCheckoutForm } from "./checkout-form";
 import { FormField, FormItem, FormMessage } from "./ui/form";
 import { PaymentPill, TPaymentPillProps } from "./payment-pill";
+import { cn } from "@/lib/utils";
 
 export default function PaymentPills({
   paymentOptions,
@@ -20,7 +21,7 @@ export default function PaymentPills({
           <h2 className="text-sm font-semibold text-uk-blue-text ml-2">
             Opciones de pago
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 rounded-2xl overflow-hidden">
             {paymentOptions.map((plan, idx) => (
               <PaymentPill
                 id={plan.id}
@@ -46,7 +47,9 @@ export default function PaymentPills({
               />
             ))}
           </div>
-          <FormMessage />
+          <div className="h-6">
+            <FormMessage />
+          </div>
         </FormItem>
       )}
     />

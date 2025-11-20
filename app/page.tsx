@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createCheckoutDTO, TCreateCheckoutDTO } from "@/lib/dto/checkout";
-import { Entity } from "@/lib/enum/entity";
-import { create } from "@/lib/api/features/entity";
+import { createCheckoutDTO } from "@/lib/dto/checkout";
+
 import { redirect } from "next/navigation";
+import { api } from "@/lib/http";
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -27,13 +27,21 @@ export default function Home() {
           "use server";
           const body = {
             lead_id: fd.get("lead_id") as string,
+            generated_by_type: "operator",
             owner_email: fd.get("owner_email") as string,
           };
-          const checkout = await create<TCheckout, TCreateCheckoutDTO>(
-            Entity.CHECKOUT,
-            createCheckoutDTO.validateSync(body)
+
+          const validatedBody = await createCheckoutDTO.validate(body);
+          // const checkout = await create<TCheckout, TCreateCheckoutDTO>(
+          //   Entity.CHECKOUT,
+          //   validatedBody
+          // );
+          const response = await api.post<TCheckout>(
+            "/checkout/session/create",
+            validatedBody
           );
-          redirect(`/checkout/${checkout.checkout_id}`);
+          console.log("response", response.data);
+          redirect(`/${response.data.checkout_id}`);
         }}
       >
         <div className="space-y-1">

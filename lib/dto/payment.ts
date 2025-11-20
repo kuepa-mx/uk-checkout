@@ -14,6 +14,7 @@ import * as yup from "yup";
 
 export const createPaymentDTO = yup.object().shape({
   lead_id: yup.string().required(),
+  checkout_id: yup.string().required(),
   paymentMethod: yup.string().oneOf(["mercadopago", "flywire"]).required(),
   amount: yup.number().required(),
   paymentTypes: yup.string().required(),

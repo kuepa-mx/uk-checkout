@@ -15,8 +15,6 @@ import {
 
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertTitle } from "./alert";
-import { AlertCircleIcon } from "lucide-react";
 
 const Form = FormProvider;
 
@@ -147,22 +145,14 @@ function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
   }
 
   return (
-    <Alert
-      className={cn(
-        "text-destructive bg-destructive/10 border-destructive/20 p-2",
-        className
-      )}
-      variant="destructive"
+    <p
+      data-slot="form-message"
+      id={formMessageId}
+      className={cn("text-destructive text-[12px] animate-in fade-in-0 duration-300 ease-in-out h-4", className)}
       {...props}
     >
-      <AlertCircleIcon className="size-4" />
-      <AlertTitle
-        id={formMessageId}
-        className="hover:overflow-visible font-normal whitespace-pre-wrap"
-      >
-        {body}
-      </AlertTitle>
-    </Alert>
+      {body}
+    </p>
   );
 }
 

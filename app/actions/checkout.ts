@@ -96,6 +96,7 @@ export async function handleCheckoutSubmission(
 
   const { paymentUrl, paymentId } = await generatePaymentLink({
     lead_id: checkout.lead.lead_id,
+    checkout_id: checkout.checkout_id,
     paymentMethod,
     amount: data.totalAmount,
     paymentTypes: "Colegiatura",
