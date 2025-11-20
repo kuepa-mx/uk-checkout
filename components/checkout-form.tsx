@@ -15,7 +15,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Calendar, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FieldLabel } from "@/components/ui/field";
 import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
@@ -199,7 +198,7 @@ export default function CheckoutForm({
     <Form {...form}>
       <form
         className={cn(
-          "space-y-2 h-full grow flex flex-col",
+          "space-y-2 grow flex flex-col w-full",
           isLoading && "pointer-events-none"
         )}
         onSubmit={form.handleSubmit(onSubmit)}
@@ -223,97 +222,99 @@ export default function CheckoutForm({
                 name="lastName"
                 render={({ field }) => (
                   <FormItem>
-                    <FieldLabel htmlFor="lastName">Apellido(s)</FieldLabel>
+                    <FieldLabel htmlFor="lastName">Apellido</FieldLabel>
                     <Input {...field} />
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-            <FormField
-              control={form.control}
-              name="career"
-              render={({ field }) => (
-                <FormItem>
-                  <FieldLabel htmlFor="career">Carrera</FieldLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      startTransition(async () => {
-                        field.onChange(value);
-                        await update<TLead>(
-                          Entity.LEAD,
-                          checkout.lead.lead_id,
-                          {
-                            carrera: {
-                              carrera_id: value,
-                            },
-                          }
-                        );
-                        router.refresh();
-                      });
-                    }}
-                    value={field.value}
-                  >
-                    <SelectTrigger
-                      id="career"
-                      className="w-full text-ellipsis overflow-hidden"
-                    >
-                      <SelectValue placeholder="Selecciona una carrera" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {careers.map((career) => (
-                        <SelectItem
-                          key={career.carrera_id}
-                          value={career.carrera_id}
-                        >
-                          {career.carrera_nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="startingDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FieldLabel htmlFor="starting-date">
-                    Fecha de inicio
-                  </FieldLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      startTransition(async () => {
-                        field.onChange(value);
-                        await updateCheckout(checkout.checkout_id, {
-                          selected_fecha_inicio: value,
-                          checkout_status: "in_progress",
+            <div className="flex flex-col md:flex-row gap-1 md:items-start items-stretch justify-stretch *:flex-1">
+              <FormField
+                control={form.control}
+                name="career"
+                render={({ field }) => (
+                  <FormItem>
+                    <FieldLabel htmlFor="career">Carrera</FieldLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        startTransition(async () => {
+                          field.onChange(value);
+                          await update<TLead>(
+                            Entity.LEAD,
+                            checkout.lead.lead_id,
+                            {
+                              carrera: {
+                                carrera_id: value,
+                              },
+                            }
+                          );
+                          router.refresh();
                         });
-                      });
-                    }}
-                    value={field.value}
-                  >
-                    <SelectTrigger id="starting-date" className="w-full">
-                      <SelectValue placeholder="Selecciona una fecha" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getApertureDateOptions().map((date) => (
-                        <SelectItem key={date.value} value={date.value}>
-                          {date.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                      }}
+                      value={field.value}
+                    >
+                      <SelectTrigger
+                        id="career"
+                        className="w-full text-ellipsis overflow-hidden"
+                      >
+                        <SelectValue placeholder="Selecciona una carrera" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {careers.map((career) => (
+                          <SelectItem
+                            key={career.carrera_id}
+                            value={career.carrera_id}
+                          >
+                            {career.carrera_nombre}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="startingDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FieldLabel htmlFor="starting-date">
+                      Fecha de inicio
+                    </FieldLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        startTransition(async () => {
+                          field.onChange(value);
+                          await updateCheckout(checkout.checkout_id, {
+                            selected_fecha_inicio: value,
+                            checkout_status: "in_progress",
+                          });
+                        });
+                      }}
+                      value={field.value}
+                    >
+                      <SelectTrigger id="starting-date" className="w-full">
+                        <SelectValue placeholder="Selecciona una fecha" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getApertureDateOptions().map((date) => (
+                          <SelectItem key={date.value} value={date.value}>
+                            {date.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </CardContent>
         </Card>
 
-        <PaymentPills paymentOptions={paymentOptions} />
+        <PaymentPills paymentOptions={paymentOptions} loading={isLoading} />
 
         <CareerSummaryCard
           career={careers.find(

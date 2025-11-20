@@ -15,7 +15,7 @@ export default function CheckoutLayout({
         height={80}
         className="mb-1"
       />
-      <Card className="max-w-md min-w-xs min-h-[500px] relative overflow-hidden">
+      <Card className="2xs:w-[300px] sm:w-[400px] md:w-[500px] relative overflow-hidden mx-2">
         <div className="absolute inset-x-0 top-0 h-1.5 bg-linear-to-r from-[#FF7A00] via-[#FF9F40] to-[#FF7A00]" />
 
         <CardContent className="flex flex-col items-center h-full grow">

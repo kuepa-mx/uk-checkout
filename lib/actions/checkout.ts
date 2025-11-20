@@ -62,7 +62,13 @@ export async function handleCheckoutSubmission(
   //   payment_method: paymentMethod,
   //   checkout_status: "payment_generated",
   // });
-  await updateCheckout(checkout.checkout_id, {
+  const checkoutAny = checkout as TCheckout & {
+    checkout_url?: string;
+    email?: string;
+    telefono_lada?: string;
+  };
+
+  const updateData: TUpdateCheckoutDTO = {
     pago: {
       pago_id: paymentId,
     },
@@ -70,7 +76,24 @@ export async function handleCheckoutSubmission(
     payment_link_generated_at: new Date().toISOString(),
     payment_method: paymentMethod,
     checkout_status: "payment_generated",
-  });
+  };
+
+  // Check if checkout_url needs to be set
+  if (!checkoutAny.checkout_url) {
+    updateData.checkout_url = `https://checkout.universidaduk.com/${checkout.checkout_id}`;
+  }
+
+  // Check if email needs to be updated from lead
+  if (!checkoutAny.email && checkout.lead?.email) {
+    updateData.email = checkout.lead.email;
+  }
+
+  // Check if telefono_lada needs to be updated from lead
+  if (!checkoutAny.telefono_lada && checkout.lead?.telefono_lada) {
+    updateData.telefono_lada = checkout.lead.telefono_lada;
+  }
+
+  await updateCheckout(checkout.checkout_id, updateData);
 
   return { paymentUrl, paymentId };
 }

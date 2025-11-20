@@ -1,6 +1,11 @@
 "use client";
 
-import { ArrowUpRightIcon, CheckCircleIcon, ClockIcon } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowUpRightIcon,
+  CheckCircleIcon,
+  ClockIcon,
+} from "lucide-react";
 import { PaymentPill, TPaymentPillProps } from "./payment-pill";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -29,7 +34,7 @@ export default function CheckoutDetails({
     : `${checkout.lead.correo_universitario}@ukuepa.com`;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full min-h-full">
       <div className="flex items-center gap-2 justify-center p-4 col-span-2 text-2xl text-uk-blue-text">
         {checkout.checkout_status === "payment_generated" ? (
           <>
@@ -88,9 +93,12 @@ export default function CheckoutDetails({
           href={checkout.payment_link!}
           target="_blank"
           rel="noopener noreferrer"
-          className="col-span-full"
+          className="col-span-2"
         >
-          <Button className="w-full">Ir al pago</Button>
+          <Button className="md:float-right px-12 md:w-fit w-full md:col-span-2">
+            Ir al pago
+            <ArrowRight className="size-4 mt-0" />
+          </Button>
         </Link>
       )}
       {checkout.checkout_status === "paid" && (

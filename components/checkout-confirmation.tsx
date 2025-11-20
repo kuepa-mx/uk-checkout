@@ -29,7 +29,7 @@ export default function InscriptionDataReviewStep({
   const formState = useFormState({ control: form.control });
 
   return (
-    <div className="flex flex-col gap-2 h-full grow">
+    <div className="flex flex-col gap-2 h-full grow w-full">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-y-2 gap-x-4">
         <Field label="Nombre" value={firstName} />
         <Field label="Apellido" value={lastName} />
@@ -50,20 +50,21 @@ export default function InscriptionDataReviewStep({
       </div>
 
       <div className="flex flex-col gap-1">
-        <h2 className="text-sm text-uk-blue-text">
-          Opcion de pago
-        </h2>
+        <h2 className="text-sm text-uk-blue-text underline">Opcion de pago</h2>
 
-        {selectedPaymentOption && (
-          <PaymentPill
-            id={selectedPaymentOption.id}
-            label={selectedPaymentOption.label}
-            subtitle={selectedPaymentOption.subtitle}
-            original_price={selectedPaymentOption.original_price}
-            final_price={selectedPaymentOption.final_price}
-            isSelected={true}
-          />
-        )}
+        <div className="bg-neutral-100 p-2 rounded-lg">
+          {selectedPaymentOption && (
+            <PaymentPill
+              id={selectedPaymentOption.id}
+              label={selectedPaymentOption.label}
+              subtitle={selectedPaymentOption.subtitle}
+              original_price={selectedPaymentOption.original_price}
+              final_price={selectedPaymentOption.final_price}
+              isSelected={true}
+              spanDoubleColumn={true}
+            />
+          )}
+        </div>
       </div>
       <CareerSummaryCard career={career} />
 

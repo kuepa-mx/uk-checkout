@@ -5,8 +5,10 @@ import { PaymentPill, TPaymentPillProps } from "./payment-pill";
 
 export default function PaymentPills({
   paymentOptions,
+  loading,
 }: {
   paymentOptions: TPaymentPillProps[];
+  loading?: boolean;
 }) {
   const { control, setValue } = useFormContext<TCheckoutForm>();
   return (

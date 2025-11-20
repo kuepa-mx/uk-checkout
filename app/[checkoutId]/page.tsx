@@ -55,7 +55,7 @@ export default async function CheckoutPage({
     (cost?.costo_carrera ?? 0) / (career?.cuenta?.cuenta_cantidad_cuotas ?? 1);
 
   console.log("career", career?.carrera_nombre);
-  console.log("cost", cost.costo_carrera);
+  console.log("cost", cost?.costo_carrera);
   console.log("installmentCost", installmentCost);
 
   const paymentOptions = discounts.data
