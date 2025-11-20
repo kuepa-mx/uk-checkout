@@ -69,10 +69,14 @@ export default function CheckoutDetails({
 
       <Field
         label="Fecha de inicio"
-        value={format(
-          new Date(`${checkout.selected_fecha_inicio!}T00:00:00`),
-          "dd/MM/yyyy"
-        )}
+        value={
+          checkout.selected_fecha_inicio
+            ? format(
+                new Date(`${checkout.selected_fecha_inicio}T00:00:00`),
+                "dd/MM/yyyy"
+              )
+            : "-"
+        }
       />
       {selectedPaymentOption && (
         <div className="col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-2">

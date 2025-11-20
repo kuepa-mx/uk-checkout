@@ -1,7 +1,7 @@
 "use server";
 
 import { getById, update } from "./entity";
-import { Entity } from "../enum/entity";
+import { Entity } from "@/lib/enum/entity";
 
 export async function getLead(id: string) {
   return await getById<TLead>(Entity.LEAD, id);

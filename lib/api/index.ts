@@ -1,7 +1,6 @@
 "use server";
 
 import { api } from "../http";
-import { createPaymentDTO, TCreatePaymentDTO } from "./dto/payment";
 
 export async function getDiscounts(): Promise<TDiscount[]> {
   const params = new URLSearchParams();
@@ -39,21 +38,4 @@ export async function getGroupsByCareerCodeAndOpeningDate(
     `/records/all/grupo?${params.toString()}`
   );
   return data.data;
-}
-
-export async function generatePaymentLink(body: TCreatePaymentDTO) {
-  console.log("Generating payment link", body);
-  if (body.amount <= 0) {
-    throw new Error("Amount must be greater than 0");
-  }
-  // {
-  //   "paymentUrl": "https://payment.flywire.com/orders/8b9dce15-5bf9-47d3-9450-72741ffa1a62?token=32eed206-58fe-4606-9ce6-6a515c0c03cb&platform=json_gateway",
-  //   "paymentId": "f87b2801-e4c8-42a0-8cb2-ede50c56772d"
-  // }
-  const { data } = await api.post<{ paymentUrl: string; paymentId: string }>(
-    `/payments/create`,
-    createPaymentDTO.validateSync(body)
-  );
-  console.log("Payment link generated", data);
-  return data;
 }

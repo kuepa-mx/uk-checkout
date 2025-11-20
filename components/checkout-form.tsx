@@ -32,7 +32,7 @@ import { useRouter } from "next/navigation";
 import { checkoutFormSchema } from "@/lib/api/schemas";
 import { handleCheckoutSubmission } from "@/lib/actions/checkout";
 import { update } from "@/lib/api/features/entity";
-import { Entity } from "@/lib/api/enum/entity";
+import { Entity } from "@/lib/enum/entity";
 import InscriptionDataReviewStep from "./checkout-confirmation";
 import FormSubtitle from "./checkout-form-subtitle";
 

@@ -1,7 +1,7 @@
 "use server";
 
 import { api } from "@/lib/http";
-import { Entity } from "../enum/entity";
+import { Entity } from "@/lib/enum/entity";
 
 export async function getAll<T>(
   entity: Entity,

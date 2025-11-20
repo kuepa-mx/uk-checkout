@@ -1,6 +1,6 @@
 import CheckoutForm from "@/components/checkout-form";
 import { getAll, getById } from "@/lib/api/features/entity";
-import { Entity } from "@/lib/api/enum/entity";
+import { Entity } from "@/lib/enum/entity";
 import CheckoutDetails from "@/components/checkout-details";
 import { capitalize } from "@/lib/utils";
 

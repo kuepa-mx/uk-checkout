@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createCheckoutDTO, TCreateCheckoutDTO } from "@/lib/api/dto/checkout";
-import { Entity } from "@/lib/api/enum/entity";
+import { createCheckoutDTO, TCreateCheckoutDTO } from "@/lib/dto/checkout";
+import { Entity } from "@/lib/enum/entity";
 import { create } from "@/lib/api/features/entity";
 import { redirect } from "next/navigation";
 

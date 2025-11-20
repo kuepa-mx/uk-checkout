@@ -1,7 +1,7 @@
 "use server";
 
 import { getAll } from "./entity";
-import { Entity } from "@/lib/api/enum/entity";
+import { Entity } from "@/lib/enum/entity";
 
 export async function getCareers(): Promise<TCareer[]> {
   const { data } = await getAll<TCareer>(Entity.CAREER, {
