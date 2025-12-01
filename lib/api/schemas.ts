@@ -18,5 +18,8 @@ export const checkoutFormSchema = yup.object().shape({
     .string()
     .required("El plan de pago es requerido")
     .min(1, "El plan de pago es requerido"),
-  totalAmount: yup.number().required("El monto total es requerido"),
+  totalAmount: yup
+    .number()
+    .required("El monto total es requerido")
+    .min(1, "El monto total debe ser mayor a 0"),
 });

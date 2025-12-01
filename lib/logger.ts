@@ -19,7 +19,8 @@ class Logger {
       ? `[${this.sessionId.slice(0, 8)}]`
       : "[N/A]";
     const leadTag = this.leadId ? `[${this.leadId.slice(0, 8)}]` : "[N/A]";
-    return `${sessionTag} ${leadTag} ${level} - ${message}`;
+    const timestamp = new Date().toISOString();
+    return `${timestamp} ${sessionTag} ${leadTag} ${level} - ${message}`;
   }
 
   error(message: string, ...args: unknown[]): void {

@@ -3,10 +3,10 @@
 import WhatsappIcon from "@/components/icons/WhatsappIcon";
 import { Button } from "@/components/ui/button";
 import { AlertCircleIcon, RefreshCcwIcon } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useTransition } from "react";
+import { useEffect, useTransition } from "react";
+
+const isDev = process.env.NODE_ENV === "development";
 
 const SUPPORT_NUMBER = "+1 (551) 249-9500";
 const serializePhoneNumber = (phoneNumber: string) =>
@@ -25,15 +25,11 @@ export default function Error({
   reset: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
-  const { checkoutId } = useParams();
   const params = new URLSearchParams();
-  params.set(
-    "text",
-    "Hola, tengo un problema con mi pago de inscripción. Mi checkout ID es: " +
-      checkoutId +
-      ". El error es: " +
-      error.message
-  );
+  useEffect(() => {
+    console.error(error);
+  }, [error]);
+  params.set("text", "Hola, tengo un problema con el pago de mi inscripción.");
   return (
     <div className="flex flex-col gap-2 items-start h-full grow">
       <span className="flex items-center gap-2">
@@ -46,9 +42,16 @@ export default function Error({
         <a href={`tel:${SUPPORT_NUMBER}`}>{SUPPORT_NUMBER}</a>
       </p>
 
-      <p className="text-xs text-muted-foreground font-mono mt-4">
-        {error.message}
-      </p>
+      {isDev ? (
+        <p className="text-xs text-muted-foreground font-mono mt-4">
+          {error.message}
+        </p>
+      ) : (
+        <p className="text-xs text-muted-foreground font-mono mt-4">
+          Por favor, contacta a nuestros operadores al{" "}
+          <a href={`tel:${SUPPORT_NUMBER}`}>{SUPPORT_NUMBER}</a>
+        </p>
+      )}
       <div className="flex gap-2 mt-auto justify-between">
         <Button
           onClick={() => startTransition(() => reset())}
@@ -78,4 +81,3 @@ export default function Error({
     </div>
   );
 }
-

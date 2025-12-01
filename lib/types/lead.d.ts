@@ -126,3 +126,10 @@ declare type TLead = {
   fecha_contacto_futuro: string | null;
   hora_contacto_futuro: string | null;
 };
+
+declare type TOwner = {
+  owner_id: string;
+  owner_nombre: string;
+  owner_email: string;
+  owner_activo: boolean;
+};
