@@ -25,7 +25,13 @@ import { format } from "date-fns";
 import PaymentPills from "./payment-pills";
 import { TPaymentPillProps } from "./payment-pill";
 import CareerSummaryCard from "./career-summary-card";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 import { cn } from "@/lib/utils";
 import { Spinner } from "./ui/spinner";
 import { useRouter } from "next/navigation";
@@ -35,6 +41,12 @@ import { update } from "@/app/actions/entity";
 import { Entity } from "@/lib/enum/entity";
 import InscriptionDataReviewStep from "./checkout-confirmation";
 import FormSubtitle from "./checkout-form-subtitle";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "./ui/accordion";
 
 const APERTURE_DATES = [
   "2025-11-24",
@@ -86,9 +98,9 @@ export default function CheckoutForm({
   const [firstName = "", lastName = ""] =
     checkout.lead?.nombre?.split(" ").filter(Boolean) || [];
   const form = useForm<TCheckoutForm>({
-    mode: "onChange",
-    reValidateMode: "onChange",
-    defaultValues: checkoutFormSchema.cast({
+    mode: "all",
+    reValidateMode: "onBlur",
+    defaultValues: {
       firstName: firstName,
       lastName: lastName,
       career: checkout.lead?.carrera?.carrera_id || "",
@@ -98,8 +110,11 @@ export default function CheckoutForm({
         paymentOptions.find(
           (option) => option.id === checkout.selected_plan_type
         )?.final_price || 0,
+    },
+    resolver: yupResolver(checkoutFormSchema, {
+      strict: true,
+      abortEarly: false,
     }),
-    resolver: yupResolver(checkoutFormSchema),
   });
 
   const selectedCareerId = useWatch({ name: "career", control: form.control });
@@ -111,26 +126,26 @@ export default function CheckoutForm({
   const [confirmationStep, setConfirmationStep] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  useEffect(() => {
-    const unsubscribeFromDiscountType = form.subscribe({
-      name: "discountType",
-      formState: {
-        values: true,
-      },
-      callback: ({ values }) => {
-        startTransition(async () => {
-          await updateCheckout(checkout.checkout_id, {
-            selected_plan_type: values.discountType,
-            checkout_status: "in_progress",
-          });
-        });
-      },
-    });
+  // useEffect(() => {
+  //   const unsubscribeFromDiscountType = form.subscribe({
+  //     name: "discountType",
+  //     formState: {
+  //       values: true,
+  //     },
+  //     callback: ({ values }) => {
+  //       startTransition(async () => {
+  //         await updateCheckout(checkout.checkout_id, {
+  //           selected_plan_type: values.discountType,
+  //           checkout_status: "in_progress",
+  //         });
+  //       });
+  //     },
+  //   });
 
-    return () => {
-      unsubscribeFromDiscountType();
-    };
-  }, [form, checkout.checkout_id]);
+  //   return () => {
+  //     unsubscribeFromDiscountType();
+  //   };
+  // }, [form, checkout.checkout_id]);
 
   const onSubmit = useCallback<SubmitHandler<TCheckoutForm>>(
     async (data) => {
@@ -164,6 +179,12 @@ export default function CheckoutForm({
     [careers, discounts, checkout, router]
   );
 
+  const isCheckoutFormCardValid = !(
+    formState.errors.firstName ||
+    formState.errors.lastName ||
+    formState.errors.career ||
+    formState.errors.startingDate
+  );
   const isLoading = formState.isSubmitting || isPending;
 
   if (formState.isSubmitting) {
@@ -203,130 +224,138 @@ export default function CheckoutForm({
         )}
         onSubmit={form.handleSubmit(onSubmit)}
       >
-        <Card>
-          <CardContent className="space-y-2">
-            <div className="flex flex-col md:flex-row gap-1 md:items-start items-stretch justify-stretch *:flex-1">
-              <FormField
-                control={form.control}
-                name="firstName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FieldLabel htmlFor="firstName">Nombre</FieldLabel>
-                    <Input {...field} />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FieldLabel htmlFor="lastName">Apellido</FieldLabel>
-                    <Input {...field} />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="flex flex-col md:flex-row gap-1 md:items-start items-stretch justify-stretch *:flex-1">
-              <FormField
-                control={form.control}
-                name="career"
-                render={({ field }) => (
-                  <FormItem>
-                    <FieldLabel htmlFor="career">Carrera</FieldLabel>
-                    <Select
-                      {...field}
-                      onValueChange={(value) => {
-                        startTransition(async () => {
-                          field.onChange(value);
-                          await update<TLead>(
-                            Entity.LEAD,
-                            checkout.lead.lead_id,
-                            {
-                              carrera: {
-                                carrera_id: value,
-                              },
-                            }
-                          );
-                          router.refresh();
-                        });
-                      }}
-                      value={field.value}
-                    >
-                      <SelectTrigger
-                        id="career"
-                        className="w-full text-ellipsis overflow-hidden"
+        <div className="flex flex-col md:flex-row gap-1 md:items-start items-stretch justify-stretch *:flex-1">
+          <FormField
+            control={form.control}
+            name="firstName"
+            render={({ field }) => (
+              <FormItem>
+                <FieldLabel htmlFor="firstName">Nombre</FieldLabel>
+                <Input {...field} />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="lastName"
+            render={({ field }) => (
+              <FormItem>
+                <FieldLabel htmlFor="lastName">Apellido</FieldLabel>
+                <Input {...field} />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <div className="flex flex-col md:flex-row gap-1 md:items-start items-stretch justify-stretch *:flex-1">
+          <FormField
+            control={form.control}
+            name="career"
+            render={({ field }) => (
+              <FormItem>
+                <FieldLabel htmlFor="career">Carrera</FieldLabel>
+                <Select
+                  {...field}
+                  disabled={isLoading}
+                  onValueChange={(value) => {
+                    startTransition(async () => {
+                      field.onChange(value);
+                      await update<TLead>(Entity.LEAD, checkout.lead.lead_id, {
+                        carrera: {
+                          carrera_id: value,
+                        },
+                      });
+                      router.refresh();
+                    });
+                  }}
+                  value={field.value}
+                >
+                  <SelectTrigger
+                    id="career"
+                    className="w-full text-ellipsis overflow-hidden"
+                  >
+                    <SelectValue placeholder="Selecciona una carrera" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {careers.map((career) => (
+                      <SelectItem
+                        key={career.carrera_id}
+                        value={career.carrera_id}
                       >
-                        <SelectValue placeholder="Selecciona una carrera" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {careers.map((career) => (
-                          <SelectItem
-                            key={career.carrera_id}
-                            value={career.carrera_id}
-                          >
-                            {career.carrera_nombre}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="startingDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FieldLabel htmlFor="starting-date">
-                      Fecha de inicio
-                    </FieldLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        startTransition(async () => {
-                          field.onChange(value);
-                          await updateCheckout(checkout.checkout_id, {
-                            selected_fecha_inicio: value,
-                            checkout_status: "in_progress",
-                          });
-                        });
-                      }}
-                      value={field.value}
-                    >
-                      <SelectTrigger
-                        id="starting-date"
-                        className={cn("w-full")}
-                        data-error={!!formState.errors.startingDate}
-                        aria-invalid={!!formState.errors.startingDate}
-                      >
-                        <SelectValue placeholder="Selecciona una fecha" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {getApertureDateOptions().map((date) => (
-                          <SelectItem key={date.value} value={date.value}>
-                            {date.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </CardContent>
-        </Card>
+                        {career.carrera_nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="startingDate"
+            render={({ field }) => (
+              <FormItem>
+                <FieldLabel htmlFor="starting-date">Fecha de inicio</FieldLabel>
+                <Select
+                  onValueChange={(value) => {
+                    startTransition(async () => {
+                      field.onChange(value);
+                      await updateCheckout(checkout.checkout_id, {
+                        selected_fecha_inicio: value,
+                        checkout_status: "in_progress",
+                      });
+                    });
+                  }}
+                  value={field.value}
+                >
+                  <SelectTrigger
+                    id="starting-date"
+                    className={cn("w-full")}
+                    data-error={!!formState.errors.startingDate}
+                    aria-invalid={!!formState.errors.startingDate}
+                  >
+                    <SelectValue placeholder="Selecciona una fecha" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getApertureDateOptions().map((date) => (
+                      <SelectItem key={date.value} value={date.value}>
+                        {date.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
-        <PaymentPills paymentOptions={paymentOptions} loading={isLoading} />
+        <Accordion
+          type="single"
+          collapsible
+          disabled={!isCheckoutFormCardValid}
+          value={isCheckoutFormCardValid ? "payment" : undefined}
+        >
+          <AccordionItem value="payment" data-error={!isCheckoutFormCardValid}>
+            <AccordionTrigger className="text-sm font-semibold text-uk-blue-text ml-2">
+              Opciones de pago
+            </AccordionTrigger>
+            <AccordionContent>
+              <PaymentPills
+                paymentOptions={paymentOptions}
+                loading={isLoading}
+              />
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
 
-        <CareerSummaryCard
+        {/* <CareerSummaryCard
           career={careers.find(
             (career) => career.carrera_id === selectedCareerId
           )}
-        />
+        /> */}
         <div className="flex flex-col items-center justify-center gap-2 mt-auto">
           <Button
             type="button"

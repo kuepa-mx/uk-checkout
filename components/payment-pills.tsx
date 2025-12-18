@@ -17,18 +17,11 @@ export default function PaymentPills({
       control={control}
       name="discountType"
       render={({ field }) => (
-        <FormItem className="space-y-1">
-          <h2 className="text-sm font-semibold text-uk-blue-text ml-2">
-            Opciones de pago
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 rounded-2xl overflow-hidden">
+        <FormItem>
+          <div className="grid grid-cols-1 gap-2 rounded-2xl overflow-hidden">
             {paymentOptions.map((plan, idx) => (
               <PaymentPill
-                id={plan.id}
-                label={plan.label}
-                subtitle={plan.subtitle}
-                original_price={plan.original_price}
-                final_price={plan.final_price}
+                {...plan}
                 key={plan.id}
                 spanDoubleColumn={idx % 3 === 0}
                 isSelected={field.value === plan.id}

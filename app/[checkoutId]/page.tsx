@@ -4,6 +4,7 @@ import { Entity } from "@/lib/enum/entity";
 import CheckoutDetails from "@/components/checkout-details";
 import { capitalize } from "@/lib/utils";
 import { createLogger } from "@/lib/logger";
+import { TPaymentOption } from "@/components/payment-pill";
 
 export default async function CheckoutPage({
   params,
@@ -140,30 +141,31 @@ export default async function CheckoutPage({
   }
   logger.info("================================\n");
 
-  const paymentOptions = discounts.data
-    .map((discount) => ({
-      id: discount.descuento_id,
-      label: capitalize(discount.descuento_nombre),
-      subtitle:
-        Number(discount.descuento_porcentaje) > 0
-          ? `${Number(discount.descuento_porcentaje) * 100}% de descuento`
-          : "Inscripción inmediata",
-      original_price:
-        installmentCost *
-        Number(
-          discount.descuento_cuotas ??
-            career?.cuenta?.cuenta_cantidad_cuotas ??
-            1
-        ),
-      final_price:
-        installmentCost *
-        Number(
-          discount.descuento_cuotas ??
-            career?.cuenta?.cuenta_cantidad_cuotas ??
-            1
-        ) *
-        (1 - Number(discount.descuento_porcentaje ?? 0)),
-    }))
+  const paymentOptions: TPaymentOption[] = discounts.data
+    .map((discount): TPaymentOption => {
+      const numberOfInstallments = Number(
+        discount.descuento_cuotas ?? career?.cuenta?.cuenta_cantidad_cuotas ?? 1
+      );
+      const originalPrice = installmentCost * numberOfInstallments;
+      const finalPrice =
+        originalPrice * (1 - Number(discount.descuento_porcentaje ?? 0));
+      const installmentPrice = finalPrice / numberOfInstallments;
+      return {
+        id: discount.descuento_id,
+        label: capitalize(discount.descuento_nombre),
+        subtitle:
+          Number(discount.descuento_porcentaje) > 0
+            ? `${Number(discount.descuento_porcentaje) * 100}% de descuento`
+            : "Inscripción inmediata",
+        discount_percentage: Number(discount.descuento_porcentaje ?? 0),
+        original_price: originalPrice,
+        // Best option is anual plan
+        bestOption: discount.descuento_nombre.toLowerCase().includes("anual"),
+        final_price: finalPrice,
+        installment_price: installmentPrice,
+        numberOfInstallments: numberOfInstallments,
+      };
+    })
     .sort((a, b) => a.final_price - b.final_price);
 
   if (

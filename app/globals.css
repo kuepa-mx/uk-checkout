@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -48,13 +50,17 @@
 }
 
 :root {
+  --color-uk-blue-bg: oklch(24.356% 0.06007 256.509);
+  --color-uk-blue-text: oklch(23.928% 0.05814 256.677);
+  --color-uk-border: oklch(23.499% 0.05619 256.869);
+  --color-uk-orange: oklch(72.299% 0.18963 50.533);
   --radius: 0.625rem;
   --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
+  --foreground: var(--color-uk-blue-text);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.005 285.823);
+  --card-foreground: var(--color-uk-blue-text);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.823);
+  --popover-foreground: var(--color-uk-blue-text);
   --primary: oklch(0.21 0.006 285.885);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.967 0.001 286.375);
@@ -63,7 +69,7 @@
   --muted-foreground: oklch(0.552 0.016 285.938);
   --accent: oklch(0.967 0.001 286.375);
   --accent-foreground: oklch(0.21 0.006 285.885);
-  --destructive: oklch(0.577 0.245 27.325);
+  --destructive: oklch(63.165% 0.16898 20.277);
   --border: oklch(0.92 0.004 286.32);
   --input: oklch(0.92 0.004 286.32);
   --ring: oklch(0.705 0.015 286.067);
@@ -73,7 +79,7 @@
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
+  --sidebar-foreground: var(--color-uk-blue-text);
   --sidebar-primary: oklch(0.21 0.006 285.885);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.967 0.001 286.375);
@@ -83,7 +89,7 @@
 }
 
 .dark {
-  --background: oklch(0.141 0.005 285.823);
+  --background: var(--color-uk-blue-text);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.21 0.006 285.885);
   --card-foreground: oklch(0.985 0 0);
@@ -125,6 +131,7 @@
   }
 }
 
-/* html, body, #__next {
-  min-height: 100%;
-} */
+@theme {
+  --font-geist-sans: "Geist", sans-serif;
+  --font-geist-mono: "Geist Mono", sans-serif;
+}

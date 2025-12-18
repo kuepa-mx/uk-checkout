@@ -5,16 +5,9 @@ import { createCheckoutDTO } from "@/lib/dto/checkout";
 
 import { redirect } from "next/navigation";
 import { api } from "@/lib/http";
-import { getAll, getById } from "./actions/entity";
+import { getById } from "./actions/entity";
 import { Entity } from "@/lib/enum/entity";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const isDev = process.env.NODE_ENV === "development";
 
