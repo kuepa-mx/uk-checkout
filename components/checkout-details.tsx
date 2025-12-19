@@ -85,10 +85,10 @@ export default function CheckoutDetails({
             id={selectedPaymentOption.id}
             label={selectedPaymentOption.label}
             subtitle={selectedPaymentOption.subtitle}
-            spanDoubleColumn
             isSelected
-            original_price={selectedPaymentOption?.original_price ?? 0}
-            final_price={selectedPaymentOption?.final_price ?? 0}
+            original_price={selectedPaymentOption?.original_price}
+            final_price={selectedPaymentOption?.final_price}
+            installment_price={selectedPaymentOption?.installment_price}
           />
         </div>
       )}

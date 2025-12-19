@@ -2,47 +2,48 @@ import { useFormContext } from "react-hook-form";
 import { TCheckoutForm } from "./checkout-form";
 import { FormField, FormItem, FormMessage } from "./ui/form";
 import { PaymentPill, TPaymentPillProps } from "./payment-pill";
-import { cn } from "@/lib/utils";
+import { useTransition } from "react";
 
 export default function PaymentPills({
   paymentOptions,
-  loading,
 }: {
   paymentOptions: TPaymentPillProps[];
-  loading?: boolean;
 }) {
+  const [isPending, startTransition] = useTransition();
   const { control, setValue } = useFormContext<TCheckoutForm>();
   return (
     <FormField
       control={control}
       name="discountType"
+      disabled={isPending}
       render={({ field }) => (
         <FormItem>
-          <div className="grid grid-cols-1 gap-2 rounded-2xl overflow-hidden">
-            {paymentOptions.map((plan, idx) => (
+          <div className="grid grid-cols-1 gap-2">
+            {paymentOptions.map((plan) => (
               <PaymentPill
                 {...plan}
                 key={plan.id}
-                spanDoubleColumn={idx % 3 === 0}
                 isSelected={field.value === plan.id}
                 onClick={() => {
-                  field.onChange(plan.id, {
-                    shouldDirty: true,
-                    shouldValidate: true,
-                    shouldTouch: true,
-                  });
-                  setValue("totalAmount", plan.final_price, {
-                    shouldDirty: true,
-                    shouldValidate: true,
-                    shouldTouch: true,
+                  console.log("onClick", plan.id);
+                  startTransition(async () => {
+                    field.onChange(plan.id, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                      shouldTouch: true,
+                    });
+                    setValue("totalAmount", plan.installment_price, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                      shouldTouch: true,
+                    });
                   });
                 }}
               />
             ))}
           </div>
-          <div className="h-6">
-            <FormMessage />
-          </div>
+
+          <FormMessage />
         </FormItem>
       )}
     />

@@ -109,7 +109,7 @@ export default function CheckoutForm({
       totalAmount:
         paymentOptions.find(
           (option) => option.id === checkout.selected_plan_type
-        )?.final_price || 0,
+        )?.installment_price || 0,
     },
     resolver: yupResolver(checkoutFormSchema, {
       strict: true,
@@ -125,28 +125,6 @@ export default function CheckoutForm({
   });
   const [confirmationStep, setConfirmationStep] = useState(false);
   const [isPending, startTransition] = useTransition();
-
-  // useEffect(() => {
-  //   const unsubscribeFromDiscountType = form.subscribe({
-  //     name: "discountType",
-  //     formState: {
-  //       values: true,
-  //     },
-  //     callback: ({ values }) => {
-  //       startTransition(async () => {
-  //         await updateCheckout(checkout.checkout_id, {
-  //           selected_plan_type: values.discountType,
-  //           checkout_status: "in_progress",
-  //         });
-  //       });
-  //     },
-  //   });
-
-  //   return () => {
-  //     unsubscribeFromDiscountType();
-  //   };
-  // }, [form, checkout.checkout_id]);
-
   const onSubmit = useCallback<SubmitHandler<TCheckoutForm>>(
     async (data) => {
       const discount = discounts.find(
@@ -335,18 +313,15 @@ export default function CheckoutForm({
         <Accordion
           type="single"
           collapsible
-          disabled={!isCheckoutFormCardValid}
-          value={isCheckoutFormCardValid ? "payment" : undefined}
+          defaultValue="payment"
+          // disabled={!isCheckoutFormCardValid}
         >
           <AccordionItem value="payment" data-error={!isCheckoutFormCardValid}>
             <AccordionTrigger className="text-sm font-semibold text-uk-blue-text ml-2">
               Opciones de pago
             </AccordionTrigger>
             <AccordionContent>
-              <PaymentPills
-                paymentOptions={paymentOptions}
-                loading={isLoading}
-              />
+              <PaymentPills paymentOptions={paymentOptions} />
             </AccordionContent>
           </AccordionItem>
         </Accordion>

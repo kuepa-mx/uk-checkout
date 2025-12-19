@@ -2,7 +2,6 @@ import { UseFormReturn, useFormState, useWatch } from "react-hook-form";
 import { TCheckoutForm } from "./checkout-form";
 import { PaymentPill, TPaymentPillProps } from "./payment-pill";
 import { format } from "date-fns";
-import CareerSummaryCard from "./career-summary-card";
 import { Button } from "./ui/button";
 import FormSubtitle from "./checkout-form-subtitle";
 
@@ -35,17 +34,8 @@ export default function InscriptionDataReviewStep({
         <Field label="Apellido" value={lastName} />
         <Field label="Carrera" value={career?.carrera_nombre} />
         <Field
-          label="Grupo"
-          value={`${career?.carrera_codigo}_${startingDate}`}
-        />
-
-        <Field
           label="Fecha de inicio"
           value={format(new Date(`${startingDate}T00:00:00`), "dd/MM/yyyy")}
-        />
-        <Field
-          label="Correo universitario"
-          value={`${firstName.toLowerCase()}.${lastName.toLowerCase()}@ukuepa.com`}
         />
       </div>
 

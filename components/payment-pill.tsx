@@ -13,27 +13,27 @@ export type TPaymentOption = {
 };
 
 export type TPaymentPillProps = {
-  id: string;
-  label: string;
-  subtitle: string;
-  original_price: number;
-  discount_percentage?: number;
-  final_price: number;
-  installment_price: number;
-  spanDoubleColumn?: boolean;
   onClick?: () => void;
   isSelected?: boolean;
   loading?: boolean;
-};
+} & TPaymentOption;
 
-const currencyFormatter = new Intl.NumberFormat("es-MX", {
+// const currencyFormatter = new Intl.NumberFormat("es-MX", {
+//   style: "currency",
+//   currency: "MXN",
+// });
+
+// $1,000
+const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
-  currency: "MXN",
+  currency: "USD",
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
 });
 
 const installmentsSubtitle: Record<number, string> = {
   1: "Inscripción inmediata",
-  4: "Hasta 3 cuotas de",
+  4: "Hasta 4 cuotas de",
   12: "Hasta 12 cuotas de",
 };
 
@@ -50,17 +50,17 @@ export const PaymentPill = ({
   final_price,
   numberOfInstallments,
   bestOption,
-}: TPaymentPillProps & TPaymentOption) => {
+}: TPaymentPillProps) => {
   return (
     <button
-      onClick={() => onClick?.()}
-      key={id}
       type="button"
-      disabled={loading}
+      onClick={onClick}
+      key={id}
+      disabled={!!loading}
       className={
-        "rounded-2xl border px-3 py-3 text-left transition hover:border-uk-blue-text relative " +
-        (bestOption ? "shadow-sm shadow-orange-500 outline-orange-500" : "") +
-        (isSelected ? "border-orange-500!" : "border-[#0B1F3A]/15") +
+        "rounded-2xl border px-3 py-3 text-left transition hover:border-uk-blue-text relative shadow-sm " +
+        (bestOption ? "" : "") +
+        (isSelected ? "border-uk-orange" : "border-[#0B1F3A]/15") +
         (loading ? " pointer-events-none" : "")
       }
     >
@@ -76,25 +76,31 @@ export const PaymentPill = ({
         }
       >
         <div className="flex flex-col leading-tight">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <span className="md:text-base text-sm font-semibold">{label}</span>
             {/* Discount Percentage Badge */}
             {discount_percentage && discount_percentage > 0 ? (
-              <span className="text-xs font-medium border border-orange-600 text-orange-600 px-1 rounded-lg">
+              <span className="text-xs font-medium border text-uk-orange border-uk-orange px-1 rounded-lg">
                 -{discount_percentage * 100}%
               </span>
             ) : null}
+            {/* Best Option Badge */}
+            {bestOption && (
+              <p>
+                ✨
+              </p>
+            )}
           </div>
           {/* <span className="md:text-sm text-[11px]">{subtitle}</span> */}
           <span className="flex items-center gap-1 mt-1 scale-90 md:scale-100 origin-left">
             <p className="text-xs font-light">Total:</p>
             {final_price !== installment_price && (
               <p className="text-xs opacity-85 font-light line-through">
-                {currencyFormatter.format(original_price)}
+                {currencyFormatter.format(original_price ?? 0)}
               </p>
             )}
             <p className="text-xs font-semibold">
-              {currencyFormatter.format(final_price)}
+              {currencyFormatter.format(final_price ?? 0)}
             </p>
           </span>
         </div>
@@ -111,7 +117,7 @@ export const PaymentPill = ({
             </p>
           )}
           <p className="md:text-xl text-base font-bold">
-            {currencyFormatter.format(installment_price)}
+            {currencyFormatter.format(installment_price ?? 0)}
           </p>
         </div>
       </div>
