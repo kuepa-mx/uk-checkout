@@ -106,6 +106,7 @@ export async function handleCheckoutSubmission(
       : cost.cuenta.cuenta_cantidad_cuotas,
     fecha_promesa_pago: new Date().toISOString().split("T")[0],
     group: group.grupo_id,
+    descuento: discount,
   });
 
   // Update the checkout
