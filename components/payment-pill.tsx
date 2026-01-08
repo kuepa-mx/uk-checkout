@@ -60,7 +60,7 @@ export const PaymentPill = ({
       className={
         "rounded-2xl border px-3 py-3 text-left transition hover:border-uk-blue-text relative shadow-sm " +
         (bestOption ? "" : "") +
-        (isSelected ? "border-uk-orange" : "border-[#0B1F3A]/15") +
+        (isSelected ? "outline outline-uk-orange -outline-offset-1" : "border-[#0B1F3A]/15") +
         (loading ? " pointer-events-none" : "")
       }
     >

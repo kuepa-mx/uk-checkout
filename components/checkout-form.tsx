@@ -81,6 +81,15 @@ function getApertureDateOptions() {
   }));
 }
 
+function getDefaultPaymentOption(paymentOptions: TPaymentPillProps[]) {
+  const defaultOption = paymentOptions.find((option) => option.bestOption);
+  console.log("defaultOption", defaultOption);
+  if (defaultOption) {
+    return defaultOption.id;
+  }
+  return paymentOptions[0]?.id || "";
+}
+
 export type TCheckoutForm = yup.InferType<typeof checkoutFormSchema>;
 
 export default function CheckoutForm({
@@ -105,7 +114,8 @@ export default function CheckoutForm({
       lastName: lastName,
       career: checkout.lead?.carrera?.carrera_id || "",
       startingDate: checkout.selected_fecha_inicio || "",
-      discountType: checkout.selected_plan_type || "",
+      discountType:
+        checkout.selected_plan_type || getDefaultPaymentOption(paymentOptions),
       totalAmount:
         paymentOptions.find(
           (option) => option.id === checkout.selected_plan_type
@@ -156,6 +166,27 @@ export default function CheckoutForm({
     },
     [careers, discounts, checkout, router]
   );
+
+  useEffect(() => {
+    const unsub = form.subscribe({
+      name: "discountType",
+      formState: {
+        values: true,
+      },
+      callback: ({ values }) => {
+        startTransition(async () => {
+          await updateCheckout(checkout.checkout_id, {
+            selected_plan_type: values.discountType,
+            checkout_status: "in_progress",
+          });
+        });
+      },
+    });
+
+    return () => {
+      unsub();
+    };
+  }, [form, checkout.checkout_id]);
 
   const isCheckoutFormCardValid = !(
     formState.errors.firstName ||
@@ -337,9 +368,25 @@ export default function CheckoutForm({
             className="w-full"
             disabled={isLoading}
             onClick={() => {
-              form
-                .trigger()
-                .then((isValid) => isValid && setConfirmationStep(true));
+              form.trigger().then((isValid) => {
+                if (!isValid) {
+                  return;
+                }
+                // Update lead with the data
+                startTransition(async () => {
+                  await update<TLead>(Entity.LEAD, checkout.lead.lead_id, {
+                    nombre: `${form.getValues("firstName")} ${form.getValues(
+                      "lastName"
+                    )}`,
+                    carrera: {
+                      carrera_id: form.getValues("career"),
+                    },
+                    
+                  });
+
+                  setConfirmationStep(true);
+                });
+              });
             }}
           >
             {isLoading ? (
