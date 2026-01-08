@@ -22,6 +22,12 @@ export const createPaymentDTO = yup.object().shape({
   pago_cuotas_aplicar_descuento: yup.number().required(),
   fecha_promesa_pago: yup.string().required(),
   group: yup.string().required(),
+  descuento: yup.object().shape({
+    descuento_id: yup.string().required(),
+    descuento_nombre: yup.string().required(),
+    descuento_porcentaje: yup.string().required(),
+    descuento_cuotas: yup.string().nullable(),
+  }).required(),
   pago_especial_cuatrimestre: yup.boolean().optional(),
 });
 
