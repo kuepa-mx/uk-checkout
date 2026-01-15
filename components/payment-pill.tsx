@@ -18,12 +18,6 @@ export type TPaymentPillProps = {
   loading?: boolean;
 } & TPaymentOption;
 
-// const currencyFormatter = new Intl.NumberFormat("es-MX", {
-//   style: "currency",
-//   currency: "MXN",
-// });
-
-// $1,000
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
@@ -32,7 +26,6 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
 });
 
 const installmentsSubtitle: Record<number, string> = {
-  1: "Inscripción inmediata",
   4: "Hasta 4 cuotas de",
   12: "Hasta 12 cuotas de",
 };
@@ -60,7 +53,9 @@ export const PaymentPill = ({
       className={
         "rounded-2xl border px-3 py-3 text-left transition hover:border-uk-blue-text relative shadow-sm " +
         (bestOption ? "" : "") +
-        (isSelected ? "outline outline-uk-orange -outline-offset-1" : "border-[#0B1F3A]/15") +
+        (isSelected
+          ? "outline outline-uk-orange -outline-offset-1"
+          : "border-[#0B1F3A]/15") +
         (loading ? " pointer-events-none" : "")
       }
     >
@@ -85,13 +80,8 @@ export const PaymentPill = ({
               </span>
             ) : null}
             {/* Best Option Badge */}
-            {bestOption && (
-              <p>
-                ✨
-              </p>
-            )}
+            {bestOption && <p>✨</p>}
           </div>
-          {/* <span className="md:text-sm text-[11px]">{subtitle}</span> */}
           <span className="flex items-center gap-1 mt-1 scale-90 md:scale-100 origin-left">
             <p className="text-xs font-light">Total:</p>
             {final_price !== installment_price && (
@@ -105,17 +95,12 @@ export const PaymentPill = ({
           </span>
         </div>
         <div className="text-end space-y-1">
-          {/* {original_price !== final_price && (
-            <span className="text-xs leading-2 font-semibold line-through text-center opacity-85 scale-90">
-              {currencyFormatter.format(original_price)}
-            </span>
-          )} */}
-          {/* <p className="text-sm">Paga ahora</p> */}
-          {numberOfInstallments && (
-            <p className="text-[10px] font-light text-nowrap">
-              {installmentsSubtitle[numberOfInstallments ?? 1]}
-            </p>
-          )}
+          {numberOfInstallments &&
+            installmentsSubtitle[numberOfInstallments] && (
+              <p className="text-[10px] font-light text-nowrap">
+                {installmentsSubtitle[numberOfInstallments]}
+              </p>
+            )}
           <p className="md:text-xl text-base font-bold">
             {currencyFormatter.format(installment_price ?? 0)}
           </p>
