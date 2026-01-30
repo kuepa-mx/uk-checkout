@@ -33,7 +33,6 @@ const installmentsSubtitle: Record<number, string> = {
 export const PaymentPill = ({
   id,
   label,
-  subtitle,
   original_price,
   installment_price,
   discount_percentage,

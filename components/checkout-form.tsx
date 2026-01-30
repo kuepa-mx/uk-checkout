@@ -233,7 +233,7 @@ export default function CheckoutForm({
         )}
         onSubmit={form.handleSubmit(onSubmit)}
       >
-        <div className="flex flex-col md:flex-row gap-1 md:items-start items-stretch justify-stretch *:flex-1">
+        <FieldRow>
           <FormField
             control={form.control}
             name="firstName"
@@ -256,8 +256,8 @@ export default function CheckoutForm({
               </FormItem>
             )}
           />
-        </div>
-        <div className="flex flex-col md:flex-row gap-1 md:items-start items-stretch justify-stretch *:flex-1">
+        </FieldRow>
+        <FieldRow>
           <FormField
             control={form.control}
             name="career"
@@ -339,13 +339,13 @@ export default function CheckoutForm({
               </FormItem>
             )}
           />
-        </div>
+        </FieldRow>
 
         <Accordion
           type="single"
           collapsible
           defaultValue="payment"
-          // disabled={!isCheckoutFormCardValid}
+        // disabled={!isCheckoutFormCardValid}
         >
           <AccordionItem value="payment" data-error={!isCheckoutFormCardValid}>
             <AccordionTrigger className="text-sm font-semibold text-uk-blue-text ml-2">
@@ -357,11 +357,6 @@ export default function CheckoutForm({
           </AccordionItem>
         </Accordion>
 
-        {/* <CareerSummaryCard
-          career={careers.find(
-            (career) => career.carrera_id === selectedCareerId
-          )}
-        /> */}
         <div className="flex flex-col items-center justify-center gap-2 mt-auto">
           <Button
             type="button"
@@ -381,7 +376,7 @@ export default function CheckoutForm({
                     carrera: {
                       carrera_id: form.getValues("career"),
                     },
-                    
+
                   });
 
                   setConfirmationStep(true);
@@ -399,5 +394,13 @@ export default function CheckoutForm({
         </div>
       </form>
     </Form>
+  );
+}
+
+function FieldRow({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col md:flex-row gap-1 md:items-start items-stretch justify-stretch *:flex-1">
+      {children}
+    </div>
   );
 }
