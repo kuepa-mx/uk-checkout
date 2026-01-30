@@ -30,7 +30,7 @@ export default function Home() {
         </CardHeader>
         <CardContent>
           <form
-            className="grid gap-2 p-2 bg-background max-w-sm mx-auto"
+            className="grid gap-2 p-2 bg-background min-w-sm mx-auto"
             action={async (fd: FormData) => {
               "use server";
 
@@ -45,10 +45,6 @@ export default function Home() {
                 owner_email: lead.owner.owner_email,
                 generated_by_type: "operator",
               });
-              // const checkout = await create<TCheckout, TCreateCheckoutDTO>(
-              //   Entity.CHECKOUT,
-              //   validatedBody
-              // );
               const response = await api.post<TCheckout>(
                 "/checkout/session/create",
                 validatedBody

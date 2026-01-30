@@ -32,7 +32,7 @@ export default function PaymentPills({
                       shouldValidate: true,
                       shouldTouch: true,
                     });
-                    setValue("totalAmount", plan.installment_price, {
+                    setValue("totalAmount", plan.final_price, {
                       shouldDirty: true,
                       shouldValidate: true,
                       shouldTouch: true,

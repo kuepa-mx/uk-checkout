@@ -119,7 +119,7 @@ export default function CheckoutForm({
       totalAmount:
         paymentOptions.find(
           (option) => option.id === checkout.selected_plan_type
-        )?.installment_price || 0,
+        )?.final_price ?? 0,
     },
     resolver: yupResolver(checkoutFormSchema, {
       strict: true,

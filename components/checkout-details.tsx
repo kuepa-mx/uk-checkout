@@ -79,7 +79,7 @@ export default function CheckoutDetails({
         }
       />
       {selectedPaymentOption && (
-        <div className="col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div className="col-span-2 grid grid-cols-1 gap-2">
           <span className="text-sm text-uk-blue-text/80">Opción de pago</span>
           <PaymentPill
             id={selectedPaymentOption.id}
@@ -99,7 +99,7 @@ export default function CheckoutDetails({
           rel="noopener noreferrer"
           className="col-span-2"
         >
-          <Button className="md:float-right px-12 md:w-fit w-full md:col-span-2">
+          <Button className="px-12 w-full md:col-span-2">
             Ir al pago
             <ArrowRight className="size-4 mt-0" />
           </Button>
@@ -125,7 +125,7 @@ function Field({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-col gap-0.5", className)}>
+    <div className={cn("flex flex-col gap-1", className)}>
       <p className="text-sm text-uk-blue-text/80">{label}</p>
       <p className="text-base font-medium text-uk-blue-text">{value ?? "-"}</p>
     </div>
