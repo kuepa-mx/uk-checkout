@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import WhatsappBtn from "@/components/whatsapp-btn";
+import WhatsappBtnWrapper from "@/components/whatsapp-btn-wrapper";
 import Script from "next/script";
+import { Suspense } from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -72,7 +73,9 @@ export default function RootLayout({
           {children}
         </ThemeProvider>
         <div className="fixed bottom-1 right-1">
-          <WhatsappBtn />
+          <Suspense fallback={null}>
+            <WhatsappBtnWrapper />
+          </Suspense>
         </div>
       </body>
     </html>
