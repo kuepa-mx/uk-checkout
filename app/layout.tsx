@@ -30,6 +30,21 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <Script
+          strategy="afterInteractive"
+          src="https://www.googletagmanager.com/gtag/js?id=AW-648411691"
+        />
+        <Script
+          id="google-gtag-aw"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'AW-648411691');`,
+          }}
+        />
+        <Script
           id="microsoft-clarity"
           strategy="afterInteractive"
           dangerouslySetInnerHTML={{
