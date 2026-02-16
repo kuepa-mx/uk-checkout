@@ -198,20 +198,20 @@ export default function CheckoutForm({
     formState.errors.totalAmount
   );
 
-  console.log("errors", formState.errors);
-
   const isLoading = formState.isSubmitting || isPending;
 
   if (formState.isSubmitting) {
     return (
-      <div className="flex flex-col items-center gap-2 justify-center h-full grow text-center max-w-[80%]">
-        <Spinner className="size-10" />
-        Procesando
-        <br />
-        <span className="text-xs mt-2 whitespace-pre-wrap">
-          Serás redirigido a la página de pago en unos segundos.
-        </span>
-      </div>
+      <CheckoutCard>
+        <div className="flex flex-col items-center gap-2 justify-center h-full grow text-center max-w-[80%]">
+          <Spinner className="size-10" />
+          Procesando
+          <br />
+          <span className="text-xs mt-2 whitespace-pre-wrap">
+            Serás redirigido a la página de pago en unos segundos.
+          </span>
+        </div>
+      </CheckoutCard>
     );
   }
 
