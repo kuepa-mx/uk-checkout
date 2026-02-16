@@ -2,7 +2,6 @@
 
 import {
   ArrowRight,
-  ArrowUpRightIcon,
   CheckCircleIcon,
   ClockIcon,
 } from "lucide-react";
@@ -35,7 +34,7 @@ export default function CheckoutDetails({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full min-h-full">
-      <div className="flex items-center gap-2 justify-center p-4 col-span-2 text-2xl text-uk-blue-text">
+      <h1 className="flex items-center gap-2 justify-center p-4 col-span-2 text-2xl font-medium text-uk-blue-text">
         {checkout.checkout_status === "payment_generated" ? (
           <>
             <ClockIcon />
@@ -47,12 +46,12 @@ export default function CheckoutDetails({
             <p>Pago realizado</p>
           </>
         )}
-      </div>
+      </h1>
 
       <Field
         label="Nombre"
         value={checkout.lead.nombre}
-        className="col-span-2"
+        className="md:col-span-1 col-span-2"
       />
       <Field
         label="Correo universitario"
@@ -63,9 +62,9 @@ export default function CheckoutDetails({
       <Field
         label="Carrera"
         value={checkout.lead.carrera.carrera_nombre}
-        className="col-span-2"
+        className="md:col-span-1 col-span-2"
       />
-      <Field label="Grupo" value={checkout.lead.grupo.grupo_nombre} />
+      {/* <Field label="Grupo" value={checkout.lead.grupo.grupo_nombre} className="md:col-span-1 col-span-1" /> */}
 
       <Field
         label="Fecha de inicio"
@@ -77,6 +76,7 @@ export default function CheckoutDetails({
               )
             : "-"
         }
+        className="md:col-span-1 col-span-2"
       />
       {selectedPaymentOption && (
         <div className="col-span-2 grid grid-cols-1 gap-2">

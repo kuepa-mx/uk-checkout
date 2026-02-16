@@ -1,14 +1,11 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import WhatsappBtn from "./whatsapp-btn";
+import useIsFromLanding from "@/lib/hooks/useIsFromLanding";
 
 export default function WhatsappBtnWrapper() {
-  const searchParams = useSearchParams();
-  const fromLanding = searchParams.get("fromLanding");
-
-  // Hide the button if fromLanding=true
-  if (fromLanding === "true") {
+  const isFromLanding = useIsFromLanding();
+  if (isFromLanding) {
     return null;
   }
 

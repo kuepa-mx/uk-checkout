@@ -1,3 +1,4 @@
+import { CheckCircleIcon, CircleIcon } from "lucide-react";
 import { Spinner } from "./ui/spinner";
 
 export type TPaymentOption = {
@@ -71,6 +72,7 @@ export const PaymentPill = ({
       >
         <div className="flex flex-col leading-tight">
           <div className="flex items-center gap-1">
+            {isSelected ? <CheckCircleIcon className="size-4 text-uk-orange" /> : <CircleIcon className="size-4 text-uk-blue-text/50" />}
             <span className="md:text-base text-sm font-semibold">{label}</span>
             {/* Discount Percentage Badge */}
             {discount_percentage && discount_percentage > 0 ? (

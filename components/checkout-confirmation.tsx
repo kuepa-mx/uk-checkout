@@ -42,7 +42,7 @@ export default function InscriptionDataReviewStep({
       <div className="flex flex-col gap-1 my-4">
         <p>Opcion de pago</p>
 
-        {selectedPaymentOption && <PaymentPill {...selectedPaymentOption} />}
+        {selectedPaymentOption && <PaymentPill {...selectedPaymentOption} isSelected={true} />}
       </div>
       {/* <CareerSummaryCard career={career} /> */}
 

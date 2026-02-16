@@ -35,7 +35,7 @@ export default function Home() {
               "use server";
 
               const lead_id = fd.get("lead_id") as string;
-              const lead = await getById<TLead>(Entity.LEAD, lead_id);
+              const lead = await getById(Entity.LEAD, lead_id);
               if (!lead) {
                 throw new Error("Lead not found");
               }

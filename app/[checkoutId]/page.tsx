@@ -5,6 +5,8 @@ import CheckoutDetails from "@/components/checkout-details";
 import { capitalize } from "@/lib/utils";
 import { createLogger } from "@/lib/logger";
 import { TPaymentOption } from "@/components/payment-pill";
+import InfoMessage from "@/components/info-message";
+import CheckoutCard from "@/components/checkout-card";
 
 export default async function CheckoutPage({
   params,
@@ -13,7 +15,7 @@ export default async function CheckoutPage({
 }) {
   const { checkoutId } = await params;
 
-  const checkout = await getById<TCheckout>(Entity.CHECKOUT, checkoutId);
+  const checkout = await getById(Entity.CHECKOUT, checkoutId);
 
   // Create logger with session context
   let logger = createLogger({
@@ -43,7 +45,7 @@ export default async function CheckoutPage({
   });
 
   const [careers, discounts] = await Promise.all([
-    getAll<TCareer>(Entity.CAREER, {
+    getAll(Entity.CAREER, {
       limit: "1000",
     }).then(
       ({ data }) =>
@@ -51,7 +53,7 @@ export default async function CheckoutPage({
           a.carrera_nombre.localeCompare(b.carrera_nombre)
         ) || ([] as TCareer[])
     ),
-    getAll<TDiscount>(Entity.DISCOUNT, {
+    getAll(Entity.DISCOUNT, {
       where: JSON.stringify({
         checkout: true,
       }),
@@ -62,7 +64,7 @@ export default async function CheckoutPage({
     (career) => career.carrera_id === checkout.lead?.carrera?.carrera_id
   );
 
-  const cost = await getAll<TCost>(Entity.COST, {
+  const cost = await getAll(Entity.COST, {
     where: JSON.stringify({
       pais: {
         pais_id: checkout.lead?.pais?.pais_id,
@@ -173,12 +175,14 @@ export default async function CheckoutPage({
     checkout.checkout_status === "paid"
   ) {
     return (
-      <CheckoutDetails
-        checkout={checkout}
-        selectedPaymentOption={paymentOptions.find(
-          (option) => option.id === checkout.selected_plan_type
-        )}
-      />
+      <CheckoutCard>
+        <CheckoutDetails
+          checkout={checkout}
+          selectedPaymentOption={paymentOptions.find(
+            (option) => option.id === checkout.selected_plan_type
+          )}
+        />
+      </CheckoutCard>
     );
   }
 
