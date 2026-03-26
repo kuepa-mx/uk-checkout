@@ -8,6 +8,7 @@ import { cacheTag, revalidateTag } from "next/cache";
 import { update } from "./entity";
 import { getCareerCost } from "./career";
 import { generatePaymentLink } from "./payments";
+import { getNextApertureDate, removeAccents } from "@/lib/utils";
 
 export async function getCheckout(
   checkoutId: string
@@ -105,7 +106,6 @@ export async function handleCheckoutSubmission(
       ? Number(discount.descuento_cuotas)
       : cost.cuenta.cuenta_cantidad_cuotas,
     fecha_promesa_pago: new Date().toISOString().split("T")[0],
-    group: group.grupo_id,
     descuento: discount,
   });
 
@@ -142,6 +142,104 @@ export async function handleCheckoutSubmission(
   }
 
   // Check if telefono_lada needs to be updated from lead
+  if (!checkoutAny.telefono_lada && checkout.lead?.telefono_lada) {
+    updateData.telefono_lada = checkout.lead.telefono_lada;
+  }
+
+  await updateCheckout(checkout.checkout_id, updateData);
+
+  return { paymentUrl, paymentId };
+}
+
+export async function handlePsychologyMasterCheckout(params: {
+  checkout: TCheckout;
+  career: TCareer;
+  cost: TCost;
+  discounts: TDiscount[];
+}) {
+  const { checkout, career, cost, discounts } = params;
+
+  // Find a discount with 0% percentage
+  const discount = discounts.find(
+    (d) => Number(d.descuento_porcentaje) === 0,
+  );
+  if (!discount) {
+    throw new Error("No se encontró un descuento con 0% para maestría en psicología");
+  }
+
+  // Determine payment method based on country
+  const paymentMethod =
+    checkout.lead.pais.pais_nombre === "Mexico" ? "mercadopago" : "flywire";
+
+  // Get the next aperture date for group lookup
+  const startingDate = getNextApertureDate();
+
+  // Default group
+  const group: Partial<TGrupo> = {
+    grupo_id: ""
+  };
+
+  // Derive university email
+  let universityEmail = checkout.lead.correo_universitario;
+  if (!universityEmail) {
+    const nameParts = (checkout.lead.nombre || "").split(/\s+/).filter(Boolean);
+    const firstName = removeAccents(nameParts[0] || "");
+    const lastName = removeAccents(nameParts[1] || "");
+    universityEmail = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@ukuepa.com`;
+  }
+
+  // Update the lead
+  await update<TLead>(Entity.LEAD, checkout.lead.lead_id, {
+    grupo: {
+      grupo_id: group.grupo_id,
+    },
+    status: { status_id: "cad8b88f-6c21-4c21-937c-bb9591edc5da" }, // En proceso de pago
+    correo_universitario: universityEmail,
+    fecha_promesa_pago: new Date().toISOString().split("T")[0],
+  });
+
+  // Generate payment link with full career cost
+  const { paymentUrl, paymentId } = await generatePaymentLink({
+    lead_id: checkout.lead.lead_id,
+    checkout_id: checkout.checkout_id,
+    paymentMethod,
+    amount: cost.costo_carrera,
+    paymentTypes: "Colegiatura",
+    solicited_email: universityEmail,
+    pago_cuotas_aplicar_descuento: discount.descuento_cuotas
+      ? Number(discount.descuento_cuotas)
+      : career.cuenta.cuenta_cantidad_cuotas,
+    fecha_promesa_pago: new Date().toISOString().split("T")[0],
+    descuento: discount,
+  });
+
+  // Update the checkout
+  const checkoutAny = checkout as TCheckout & {
+    checkout_url?: string;
+    email?: string;
+    telefono_lada?: string;
+  };
+
+  const updateData: TUpdateCheckoutDTO = {
+    pago: {
+      pago_id: paymentId,
+    },
+    payment_link: paymentUrl,
+    payment_link_generated_at: new Date().toISOString(),
+    payment_method: paymentMethod,
+    checkout_status: "payment_generated",
+    selected_plan_type: discount.descuento_id,
+    selected_fecha_inicio: startingDate,
+  };
+
+  if (!checkoutAny.checkout_url) {
+    updateData.checkout_url = `https://checkout.universidaduk.com/${checkout.checkout_id}`;
+  }
+
+  if (!checkoutAny.email && checkout.lead?.email) {
+    updateData.email = checkout.lead.email;
+  }
+
   if (!checkoutAny.telefono_lada && checkout.lead?.telefono_lada) {
     updateData.telefono_lada = checkout.lead.telefono_lada;
   }

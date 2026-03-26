@@ -29,7 +29,7 @@ import {
   useState,
   useTransition,
 } from "react";
-import { cn } from "@/lib/utils";
+import { cn, APERTURE_DATES } from "@/lib/utils";
 import { Spinner } from "./ui/spinner";
 import { useRouter } from "next/navigation";
 import { checkoutFormSchema } from "@/lib/api/schemas";
@@ -47,24 +47,6 @@ import {
 import CheckoutCard from "./checkout-card";
 import InfoMessage from "./info-message";
 
-const APERTURE_DATES = [
-  "2025-11-24",
-  "2026-01-19",
-  "2026-02-09",
-  "2026-03-02",
-  "2026-04-06",
-  "2026-04-27",
-  "2026-05-18",
-  "2026-06-08",
-  "2026-06-29",
-  "2026-07-20",
-  "2026-08-17",
-  "2026-09-07",
-  "2026-09-28",
-  "2026-10-19",
-  "2026-11-09",
-  "2026-11-30",
-] as const;
 
 function getApertureDateOptions() {
   // Return the 2 closest dates after the current date

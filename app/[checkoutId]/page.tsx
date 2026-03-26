@@ -2,11 +2,12 @@ import CheckoutForm from "@/components/checkout-form";
 import { getAll, getById } from "@/app/actions/entity";
 import { Entity } from "@/lib/enum/entity";
 import CheckoutDetails from "@/components/checkout-details";
-import { capitalize } from "@/lib/utils";
+import { capitalize, isPsychologyMaster } from "@/lib/utils";
 import { createLogger } from "@/lib/logger";
 import { TPaymentOption } from "@/components/payment-pill";
-import InfoMessage from "@/components/info-message";
 import CheckoutCard from "@/components/checkout-card";
+import { handlePsychologyMasterCheckout } from "@/app/actions/checkout";
+import { redirect } from "next/navigation";
 
 export default async function CheckoutPage({
   params,
@@ -50,8 +51,8 @@ export default async function CheckoutPage({
     }).then(
       ({ data }) =>
         data?.sort((a, b) =>
-          a.carrera_nombre.localeCompare(b.carrera_nombre)
-        ) || ([] as TCareer[])
+          a.carrera_nombre.localeCompare(b.carrera_nombre),
+        ) || ([] as TCareer[]),
     ),
     getAll(Entity.DISCOUNT, {
       where: JSON.stringify({
@@ -61,7 +62,7 @@ export default async function CheckoutPage({
   ]);
 
   const career = careers.find(
-    (career) => career.carrera_id === checkout.lead?.carrera?.carrera_id
+    (career) => career.carrera_id === checkout.lead?.carrera?.carrera_id,
   );
 
   const cost = await getAll(Entity.COST, {
@@ -77,6 +78,49 @@ export default async function CheckoutPage({
   }).then(({ data }) => data?.[0] || null);
   const installmentCost =
     (cost?.costo_carrera ?? 0) / (career?.cuenta?.cuenta_cantidad_cuotas ?? 1);
+
+  // Psychology masters: auto-generate payment link and redirect to show CheckoutDetails
+  if (isPsychologyMaster(checkout.lead?.carrera)) {
+    if (
+      checkout.checkout_status !== "payment_generated" &&
+      checkout.checkout_status !== "paid"
+    ) {
+      if (!cost || !career) {
+        logger.error(
+          "Missing cost or career data for psychology master auto-checkout",
+        );
+        return (
+          <CheckoutCard>
+            <div>Error: No se encontró información de costo o carrera</div>
+          </CheckoutCard>
+        );
+      }
+
+      try {
+        logger.info(
+          "Psychology master detected, auto-generating payment link...",
+        );
+        await handlePsychologyMasterCheckout({
+          checkout,
+          career,
+          cost,
+          discounts: discounts.data,
+        });
+      } catch (error) {
+        logger.error(
+          "Failed to auto-generate psychology master payment:",
+          error,
+        );
+        return (
+          <CheckoutCard>
+            <div>Error al generar el link de pago</div>
+          </CheckoutCard>
+        );
+      }
+
+      redirect(`/${checkoutId}`);
+    }
+  }
 
   // Log checkout information
   logger.info("=== CHECKOUT INFORMATION ===");
@@ -120,7 +164,7 @@ export default async function CheckoutPage({
     logger.info("Account ID:", career.cuenta?.cuenta_id);
     logger.info(
       "Number of Installments:",
-      career.cuenta?.cuenta_cantidad_cuotas
+      career.cuenta?.cuenta_cantidad_cuotas,
     );
     logger.info("Account Active:", career.cuenta?.cuenta_activo);
   } else {
@@ -135,7 +179,7 @@ export default async function CheckoutPage({
     logger.info("Installment Cost:", installmentCost);
     logger.info(
       "Number of Installments:",
-      career?.cuenta?.cuenta_cantidad_cuotas ?? "N/A"
+      career?.cuenta?.cuenta_cantidad_cuotas ?? "N/A",
     );
     logger.info("Total Career Cost:", cost.costo_carrera);
   } else {
@@ -146,7 +190,9 @@ export default async function CheckoutPage({
   const paymentOptions: TPaymentOption[] = discounts.data
     .map((discount): TPaymentOption => {
       const numberOfInstallments = Number(
-        discount.descuento_cuotas ?? career?.cuenta?.cuenta_cantidad_cuotas ?? 1
+        discount.descuento_cuotas ??
+          career?.cuenta?.cuenta_cantidad_cuotas ??
+          1,
       );
       const originalPrice = installmentCost * numberOfInstallments;
       const finalPrice =
@@ -179,7 +225,7 @@ export default async function CheckoutPage({
         <CheckoutDetails
           checkout={checkout}
           selectedPaymentOption={paymentOptions.find(
-            (option) => option.id === checkout.selected_plan_type
+            (option) => option.id === checkout.selected_plan_type,
           )}
         />
       </CheckoutCard>
