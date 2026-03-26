@@ -124,7 +124,7 @@ export default async function CheckoutPage({
         );
       }
 
-      redirect(`/${checkoutId}`);
+      redirect(`/${checkoutId}?fromLanding=true`);
     }
   }
 

@@ -171,9 +171,6 @@ export async function handlePsychologyMasterCheckout(params: {
   const paymentMethod =
     checkout.lead.pais.pais_nombre === "Mexico" ? "mercadopago" : "flywire";
 
-  // Get the next aperture date for group lookup
-  const startingDate = getNextApertureDate();
-
   // Derive university email
   let universityEmail = checkout.lead.correo_universitario;
   if (!universityEmail) {
@@ -224,7 +221,6 @@ export async function handlePsychologyMasterCheckout(params: {
     payment_method: paymentMethod,
     checkout_status: "payment_generated",
     selected_plan_type: discount.descuento_id,
-    selected_fecha_inicio: startingDate,
   };
 
   if (!checkoutAny.checkout_url) {
