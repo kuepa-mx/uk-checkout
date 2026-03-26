@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  ArrowRight,
-  CheckCircleIcon,
-  ClockIcon,
-} from "lucide-react";
+import { ArrowRight, CheckCircleIcon, ClockIcon } from "lucide-react";
 import { PaymentPill, TPaymentPillProps } from "./payment-pill";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -27,14 +23,14 @@ export default function CheckoutDetails({
   }
 
   const universityEmail = checkout.lead.correo_universitario.endsWith(
-    "@ukuepa.com"
+    "@ukuepa.com",
   )
     ? checkout.lead.correo_universitario
     : `${checkout.lead.correo_universitario}@ukuepa.com`;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full min-h-full">
-      <h1 className="flex items-center gap-2 justify-center p-4 col-span-2 text-2xl font-medium text-uk-blue-text">
+      <h1 className="flex items-center gap-2 justify-center p-4 col-span-2 text-2xl font-medium text-card-foreground">
         {checkout.checkout_status === "payment_generated" ? (
           <>
             <ClockIcon />
@@ -72,7 +68,7 @@ export default function CheckoutDetails({
           checkout.selected_fecha_inicio
             ? format(
                 new Date(`${checkout.selected_fecha_inicio}T00:00:00`),
-                "dd/MM/yyyy"
+                "dd/MM/yyyy",
               )
             : "-"
         }
@@ -80,7 +76,7 @@ export default function CheckoutDetails({
       />
       {selectedPaymentOption && (
         <div className="col-span-2 grid grid-cols-1 gap-2">
-          <span className="text-sm text-uk-blue-text/80">Opción de pago</span>
+          <span className="text-sm text-card-foreground/80">Opción de pago</span>
           <PaymentPill
             id={selectedPaymentOption.id}
             label={selectedPaymentOption.label}
@@ -126,8 +122,8 @@ function Field({
 }) {
   return (
     <div className={cn("flex flex-col gap-1", className)}>
-      <p className="text-sm text-uk-blue-text/80">{label}</p>
-      <p className="text-base font-medium text-uk-blue-text">{value ?? "-"}</p>
+      <p className="text-sm text-card-foreground/80">{label}</p>
+      <p className="text-base font-medium text-card-foreground">{value ?? "-"}</p>
     </div>
   );
 }

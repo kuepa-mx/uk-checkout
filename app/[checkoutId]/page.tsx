@@ -85,13 +85,19 @@ export default async function CheckoutPage({
       checkout.checkout_status !== "payment_generated" &&
       checkout.checkout_status !== "paid"
     ) {
-      if (!cost || !career) {
-        logger.error(
-          "Missing cost or career data for psychology master auto-checkout",
-        );
+      if (!career) {
+        logger.error("Career not found for psychology master auto-checkout");
         return (
           <CheckoutCard>
-            <div>Error: No se encontró información de costo o carrera</div>
+            <div>Error: No se encontró la carrera</div>
+          </CheckoutCard>
+        );
+      }
+      if (!cost) {
+        logger.error("Cost not found for psychology master auto-checkout");
+        return (
+          <CheckoutCard>
+            <div>Error: No se encontró el costo</div>
           </CheckoutCard>
         );
       }

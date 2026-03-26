@@ -36,7 +36,7 @@ export async function updateCheckout(
     },
   });
   console.log("Updated checkout", checkoutId);
-  revalidateTag(`checkout:${checkoutId}`, "max");
+  // revalidateTag(`checkout:${checkoutId}`, "max");
 
   return data;
 }
@@ -174,11 +174,6 @@ export async function handlePsychologyMasterCheckout(params: {
   // Get the next aperture date for group lookup
   const startingDate = getNextApertureDate();
 
-  // Default group
-  const group: Partial<TGrupo> = {
-    grupo_id: ""
-  };
-
   // Derive university email
   let universityEmail = checkout.lead.correo_universitario;
   if (!universityEmail) {
@@ -191,7 +186,7 @@ export async function handlePsychologyMasterCheckout(params: {
   // Update the lead
   await update<TLead>(Entity.LEAD, checkout.lead.lead_id, {
     grupo: {
-      grupo_id: group.grupo_id,
+      grupo_id: "e29f2b23-8c98-41d4-b2ce-6cd1655e6c19" // LIP_2027-01-18
     },
     status: { status_id: "cad8b88f-6c21-4c21-937c-bb9591edc5da" }, // En proceso de pago
     correo_universitario: universityEmail,

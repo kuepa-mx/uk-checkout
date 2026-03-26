@@ -76,7 +76,7 @@ export default function CareerSummaryCard({
         >
           <Button
             type="button"
-            className="text-sm text-uk-blue-text bg-white hover:bg-white/90 w-full"
+            className="text-sm text-card-foreground bg-white hover:bg-white/90 w-full"
           >
             Ver temario
           </Button>

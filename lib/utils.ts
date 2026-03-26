@@ -19,7 +19,18 @@ export function removeAccents(value: unknown): string {
 }
 
 export function isPsychologyMaster(career: TCareer) {
-  return career.carrera_codigo.startsWith("PSY");
+  const mastersPsychologyIds = [
+    // Masters Psico
+    '747d2a1c-0903-4608-bead-9d308e1fb455',
+    '7f28c840-48ce-47bc-b330-18748ba73601',
+    '322789e5-9666-4a2b-9893-b6fff10af707',
+    '90161738-68db-4797-bdb3-584d461a16b6',
+    'a56c8311-4368-4aca-a924-c3406cbd1001',
+    'c7a786ed-e4ac-4d30-a54f-d61c226e180d',
+    '27848edc-4cd6-4ce9-8ee6-8a6e06442193',
+    'b8d60599-67dd-4e48-938d-fad2910147c9',
+  ]
+  return mastersPsychologyIds.includes(career.carrera_id);
 }
 
 export const APERTURE_DATES = [

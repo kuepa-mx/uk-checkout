@@ -83,12 +83,12 @@ export default function RootLayout({
       >
         <ThemeProvider attribute="class" defaultTheme="light">
           {children}
+          <div className="fixed bottom-1 right-1">
+            <Suspense fallback={null}>
+              <WhatsappBtnWrapper />
+            </Suspense>
+          </div>
         </ThemeProvider>
-        <div className="fixed bottom-1 right-1">
-          <Suspense fallback={null}>
-            <WhatsappBtnWrapper />
-          </Suspense>
-        </div>
       </body>
     </html>
   );
