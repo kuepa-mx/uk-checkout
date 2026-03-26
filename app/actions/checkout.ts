@@ -4,11 +4,11 @@ import { TCheckoutForm } from "@/components/checkout-form";
 import { getGroupsByCareerCodeAndOpeningDate } from "@/lib/api";
 import { Entity } from "@/lib/enum/entity";
 import { api } from "@/lib/http";
-import { cacheTag, revalidateTag } from "next/cache";
-import { update } from "./entity";
+import { cacheTag } from "next/cache";
+import { getById, update } from "./entity";
 import { getCareerCost } from "./career";
 import { generatePaymentLink } from "./payments";
-import { getNextApertureDate, removeAccents } from "@/lib/utils";
+import { removeAccents } from "@/lib/utils";
 
 export async function getCheckout(
   checkoutId: string
@@ -155,14 +155,11 @@ export async function handlePsychologyMasterCheckout(params: {
   checkout: TCheckout;
   career: TCareer;
   cost: TCost;
-  discounts: TDiscount[];
 }) {
-  const { checkout, career, cost, discounts } = params;
+  const { checkout, career, cost } = params;
 
-  // Find a discount with 0% percentage
-  const discount = discounts.find(
-    (d) => Number(d.descuento_porcentaje) === 0,
-  );
+  // Fetch the "Pago Completo" discount for ISEB masters;
+  const discount = await getById(Entity.DISCOUNT, "77492cc7-7caf-4a71-ac38-1438b8cdcb3d");
   if (!discount) {
     throw new Error("No se encontró un descuento con 0% para maestría en psicología");
   }

@@ -54,11 +54,7 @@ export default async function CheckoutPage({
           a.carrera_nombre.localeCompare(b.carrera_nombre),
         ) || ([] as TCareer[]),
     ),
-    getAll(Entity.DISCOUNT, {
-      where: JSON.stringify({
-        checkout: true,
-      }),
-    }),
+    getAll(Entity.DISCOUNT),
   ]);
 
   const career = careers.find(
@@ -110,7 +106,6 @@ export default async function CheckoutPage({
           checkout,
           career,
           cost,
-          discounts: discounts.data,
         });
       } catch (error) {
         logger.error(
@@ -193,46 +188,51 @@ export default async function CheckoutPage({
   }
   logger.info("================================\n");
 
+  const discountToPaymentOption = (discount: TDiscount): TPaymentOption => {
+    const numberOfInstallments = Number(
+      discount.descuento_cuotas ?? career?.cuenta?.cuenta_cantidad_cuotas ?? 1,
+    );
+    const originalPrice = installmentCost * numberOfInstallments;
+    const finalPrice =
+      originalPrice * (1 - Number(discount.descuento_porcentaje ?? 0));
+    const installmentPrice = finalPrice / numberOfInstallments;
+    return {
+      id: discount.descuento_id,
+      label: capitalize(discount.descuento_nombre),
+      subtitle:
+        Number(discount.descuento_porcentaje) > 0
+          ? `${Number(discount.descuento_porcentaje) * 100}% de descuento`
+          : "Inscripción inmediata",
+      discount_percentage: Number(discount.descuento_porcentaje ?? 0),
+      original_price: originalPrice,
+      // Best option is anual plan
+      bestOption: discount.descuento_nombre.toLowerCase().includes("anual"),
+      final_price: finalPrice,
+      installment_price: installmentPrice,
+      numberOfInstallments: numberOfInstallments,
+    };
+  };
+
   const paymentOptions: TPaymentOption[] = discounts.data
-    .map((discount): TPaymentOption => {
-      const numberOfInstallments = Number(
-        discount.descuento_cuotas ??
-          career?.cuenta?.cuenta_cantidad_cuotas ??
-          1,
-      );
-      const originalPrice = installmentCost * numberOfInstallments;
-      const finalPrice =
-        originalPrice * (1 - Number(discount.descuento_porcentaje ?? 0));
-      const installmentPrice = finalPrice / numberOfInstallments;
-      return {
-        id: discount.descuento_id,
-        label: capitalize(discount.descuento_nombre),
-        subtitle:
-          Number(discount.descuento_porcentaje) > 0
-            ? `${Number(discount.descuento_porcentaje) * 100}% de descuento`
-            : "Inscripción inmediata",
-        discount_percentage: Number(discount.descuento_porcentaje ?? 0),
-        original_price: originalPrice,
-        // Best option is anual plan
-        bestOption: discount.descuento_nombre.toLowerCase().includes("anual"),
-        final_price: finalPrice,
-        installment_price: installmentPrice,
-        numberOfInstallments: numberOfInstallments,
-      };
-    })
+    .filter((d) => !!d.checkout)
+    .map(discountToPaymentOption)
     .sort((a, b) => a.final_price - b.final_price);
 
   if (
     checkout.checkout_status === "payment_generated" ||
     checkout.checkout_status === "paid"
   ) {
+    const discount = discounts.data.find(
+      (discount) => discount.descuento_id === checkout.selected_plan_type,
+    )!;
     return (
       <CheckoutCard>
         <CheckoutDetails
           checkout={checkout}
-          selectedPaymentOption={paymentOptions.find(
-            (option) => option.id === checkout.selected_plan_type,
-          )}
+          // selectedPaymentOption={paymentOptions.find(
+          //   (option) => option.id === checkout.selected_plan_type,
+          // )}
+          selectedPaymentOption={discountToPaymentOption(discount)}
         />
       </CheckoutCard>
     );
