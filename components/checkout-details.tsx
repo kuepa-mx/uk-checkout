@@ -2,7 +2,7 @@
 
 import { ArrowRight, CheckCircleIcon, ClockIcon } from "lucide-react";
 import { PaymentPill, TPaymentPillProps } from "./payment-pill";
-import { cn } from "@/lib/utils";
+import { cn, isPsychologyMaster } from "@/lib/utils";
 import { format } from "date-fns";
 import Link from "next/link";
 import { Button } from "./ui/button";
@@ -10,10 +10,10 @@ import { Button } from "./ui/button";
 // Component when the checkout is "payment_generated" or "paid"
 export default function CheckoutDetails({
   checkout,
-  selectedPaymentOption,
+  plan: selectedPaymentOption,
 }: {
   checkout: TCheckout;
-  selectedPaymentOption?: TPaymentPillProps | undefined;
+  plan?: TPaymentPillProps | undefined;
 }) {
   if (
     checkout.checkout_status !== "payment_generated" &&
@@ -27,6 +27,8 @@ export default function CheckoutDetails({
   )
     ? checkout.lead.correo_universitario
     : `${checkout.lead.correo_universitario}@ukuepa.com`;
+
+  const isPsyMaster = isPsychologyMaster(checkout.lead.carrera);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full min-h-full">
@@ -49,34 +51,39 @@ export default function CheckoutDetails({
         value={checkout.lead.nombre}
         className="md:col-span-1 col-span-2"
       />
-      <Field
-        label="Correo universitario"
-        value={universityEmail}
-        className="col-span-2"
-      />
+      {!isPsyMaster && (
+        <Field
+          label="Correo universitario"
+          value={universityEmail}
+          className="col-span-2"
+        />
+      )}
 
       <Field
         label="Carrera"
         value={checkout.lead.carrera.carrera_nombre}
         className="md:col-span-1 col-span-2"
       />
-      {/* <Field label="Grupo" value={checkout.lead.grupo.grupo_nombre} className="md:col-span-1 col-span-1" /> */}
 
-      <Field
-        label="Fecha de inicio"
-        value={
-          checkout.selected_fecha_inicio
-            ? format(
-                new Date(`${checkout.selected_fecha_inicio}T00:00:00`),
-                "dd/MM/yyyy",
-              )
-            : "-"
-        }
-        className="md:col-span-1 col-span-2"
-      />
+      {!isPsyMaster && (
+        <Field
+          label="Fecha de inicio"
+          value={
+            checkout.selected_fecha_inicio
+              ? format(
+                  new Date(`${checkout.selected_fecha_inicio}T00:00:00`),
+                  "dd/MM/yyyy",
+                )
+              : "-"
+          }
+          className="md:col-span-1 col-span-2"
+        />
+      )}
       {selectedPaymentOption && (
         <div className="col-span-2 grid grid-cols-1 gap-2">
-          <span className="text-sm text-card-foreground/80">Opción de pago</span>
+          <span className="text-sm text-card-foreground/80">
+            Opción de pago
+          </span>
           <PaymentPill
             id={selectedPaymentOption.id}
             label={selectedPaymentOption.label}
@@ -123,7 +130,9 @@ function Field({
   return (
     <div className={cn("flex flex-col gap-1", className)}>
       <p className="text-sm text-card-foreground/80">{label}</p>
-      <p className="text-base font-medium text-card-foreground">{value ?? "-"}</p>
+      <p className="text-base font-medium text-card-foreground">
+        {value ?? "-"}
+      </p>
     </div>
   );
 }

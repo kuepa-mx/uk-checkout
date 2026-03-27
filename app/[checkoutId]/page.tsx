@@ -229,10 +229,7 @@ export default async function CheckoutPage({
       <CheckoutCard>
         <CheckoutDetails
           checkout={checkout}
-          // selectedPaymentOption={paymentOptions.find(
-          //   (option) => option.id === checkout.selected_plan_type,
-          // )}
-          selectedPaymentOption={discountToPaymentOption(discount)}
+          plan={discountToPaymentOption(discount)}
         />
       </CheckoutCard>
     );
