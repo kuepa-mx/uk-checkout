@@ -63,17 +63,14 @@ export default function Error({
         </Button>
         <Link
           href={`https://wa.me/${serializePhoneNumber(
-            SUPPORT_NUMBER
+            SUPPORT_NUMBER,
           )}?${params.toString()}`}
           target="_blank"
           rel="noopener noreferrer"
           className="group"
         >
-          <Button
-            variant="link"
-            className="shadow group-hover:shadow-uk-orange"
-          >
-            <WhatsappIcon className="size-5 " />
+          <Button variant="outline">
+            <WhatsappIcon className="" />
             {SUPPORT_NUMBER}
           </Button>
         </Link>
