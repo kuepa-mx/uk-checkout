@@ -32,11 +32,11 @@ export default function Error({
   params.set("text", "Hola, tengo un problema con el pago de mi inscripción.");
   return (
     <div className="flex flex-col gap-2 items-start h-full grow">
-      <span className="flex items-center gap-2">
+      <span className="flex items-center gap-2 text-foreground">
         <AlertCircleIcon />
         <h1 className="text-lg font-medium">Error</h1>
       </span>
-      <p className="text-sm font-medium mt-2">
+      <p className="text-sm text-foreground font-medium mt-2">
         Ha ocurrido un error al cargar la página. Por favor, intenta nuevamente.
         Si el error persiste, contacta a nuestros operadores al{" "}
         <a href={`tel:${SUPPORT_NUMBER}`}>{SUPPORT_NUMBER}</a>
