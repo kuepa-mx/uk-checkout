@@ -11,7 +11,7 @@ import { generatePaymentLink } from "./payments";
 import { removeAccents } from "@/lib/utils";
 
 export async function getCheckout(
-  checkoutId: string
+  checkoutId: string,
 ): Promise<TCheckout | null> {
   "use cache";
   cacheTag(`checkout:${checkoutId}`);
@@ -27,7 +27,7 @@ export async function getCheckout(
 
 export async function updateCheckout(
   checkoutId: string,
-  body: TUpdateCheckoutDTO
+  body: TUpdateCheckoutDTO,
 ) {
   console.log("Updating checkout", checkoutId, body);
   const { data } = await api.patch<TCheckout>(`/checkout/${checkoutId}`, body, {
@@ -43,7 +43,7 @@ export async function updateCheckout(
 
 export async function computeTotalAmount(
   checkoutId: string,
-  discountId: string
+  discountId: string,
 ) {
   const { data } = await api.post<{
     monto_final: number;
@@ -62,27 +62,29 @@ export async function handleCheckoutSubmission(
   data: TCheckoutForm,
   checkout: TCheckout,
   discount: TDiscount,
-  career: TCareer
+  career: TCareer,
 ) {
-  const universityEmail = `${data.firstName.toLowerCase()}.${data.lastName.toLowerCase()}`;
+  const universityEmail =
+    `${data.firstName.toLowerCase()}.${data.lastName.toLowerCase()}`;
   // If the lead is from Mexico, use Mercado Pago, otherwise use Flywire
-  const paymentMethod =
-    checkout.lead.pais.pais_nombre === "Mexico" ? "mercadopago" : "flywire";
+  const paymentMethod = checkout.lead.pais.pais_nombre === "Mexico"
+    ? "mercadopago"
+    : "flywire";
 
   const groups = await getGroupsByCareerCodeAndOpeningDate(
     career.carrera_codigo,
-    data.startingDate
+    data.startingDate,
   );
   if (groups.length === 0) {
     throw new Error(
-      `No se encontro el grupo "${career.carrera_codigo}_${data.startingDate}"`
+      `No se encontro el grupo "${career.carrera_codigo}_${data.startingDate}"`,
     );
   }
   const group = groups[0];
 
   const cost = await getCareerCost(
     career.cuenta.cuenta_id,
-    checkout.lead.pais.pais_id
+    checkout.lead.pais.pais_id,
   );
 
   // Update the lead
@@ -133,7 +135,8 @@ export async function handleCheckoutSubmission(
 
   // Check if checkout_url needs to be set
   if (!checkoutAny.checkout_url) {
-    updateData.checkout_url = `https://checkout.universidaduk.com/${checkout.checkout_id}`;
+    updateData.checkout_url =
+      `https://checkout.universidaduk.com/${checkout.checkout_id}`;
   }
 
   // Check if email needs to be updated from lead
@@ -159,14 +162,20 @@ export async function handlePsychologyMasterCheckout(params: {
   const { checkout, career, cost } = params;
 
   // Fetch the "Pago Completo" discount for ISEB masters;
-  const discount = await getById(Entity.DISCOUNT, "77492cc7-7caf-4a71-ac38-1438b8cdcb3d");
+  const discount = await getById(
+    Entity.DISCOUNT,
+    "77492cc7-7caf-4a71-ac38-1438b8cdcb3d",
+  );
   if (!discount) {
-    throw new Error("No se encontró un descuento con 0% para maestría en psicología");
+    throw new Error(
+      "No se encontró un descuento con 0% para maestría en psicología",
+    );
   }
 
   // Determine payment method based on country
-  const paymentMethod =
-    checkout.lead.pais.pais_nombre === "Mexico" ? "mercadopago" : "flywire";
+  const paymentMethod = checkout.lead.pais.pais_nombre === "Mexico"
+    ? "mercadopago"
+    : "flywire";
 
   // Derive university email
   let universityEmail = checkout.lead.correo_universitario;
@@ -174,18 +183,9 @@ export async function handlePsychologyMasterCheckout(params: {
     const nameParts = (checkout.lead.nombre || "").split(/\s+/).filter(Boolean);
     const firstName = removeAccents(nameParts[0] || "");
     const lastName = removeAccents(nameParts[1] || "");
-    universityEmail = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@ukuepa.com`;
+    universityEmail =
+      `${firstName.toLowerCase()}.${lastName.toLowerCase()}@ukuepa.com`;
   }
-
-  // Update the lead
-  await update<TLead>(Entity.LEAD, checkout.lead.lead_id, {
-    grupo: {
-      grupo_id: "e29f2b23-8c98-41d4-b2ce-6cd1655e6c19" // LIP_2027-01-18
-    },
-    status: { status_id: "cad8b88f-6c21-4c21-937c-bb9591edc5da" }, // En proceso de pago
-    correo_universitario: universityEmail,
-    fecha_promesa_pago: new Date().toISOString().split("T")[0],
-  });
 
   // Generate payment link with full career cost
   const { paymentUrl, paymentId } = await generatePaymentLink({
@@ -221,7 +221,8 @@ export async function handlePsychologyMasterCheckout(params: {
   };
 
   if (!checkoutAny.checkout_url) {
-    updateData.checkout_url = `https://checkout.universidaduk.com/${checkout.checkout_id}`;
+    updateData.checkout_url =
+      `https://checkout.universidaduk.com/${checkout.checkout_id}`;
   }
 
   if (!checkoutAny.email && checkout.lead?.email) {
