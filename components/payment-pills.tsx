@@ -25,7 +25,6 @@ export default function PaymentPills({
                 key={plan.id}
                 isSelected={field.value === plan.id}
                 onClick={() => {
-                  console.log("onClick", plan.id);
                   startTransition(async () => {
                     field.onChange(plan.id, {
                       shouldDirty: true,

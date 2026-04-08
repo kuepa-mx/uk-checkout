@@ -15,7 +15,6 @@ export async function getDiscounts(): Promise<TDiscount[]> {
     `/records/all/descuento?${params.toString()}`
   );
   if (data.data?.length === 0) {
-    console.error("No discounts found for checkout");
     return [];
   }
   return data.data;

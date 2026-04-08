@@ -13,7 +13,7 @@ export default function CheckoutDetails({
   plan: selectedPaymentOption,
 }: {
   checkout: TCheckout;
-  plan?: TPaymentPillProps | undefined;
+  plan?: TPaymentPillProps | null;
 }) {
   if (
     checkout.checkout_status !== "payment_generated" &&
@@ -22,7 +22,7 @@ export default function CheckoutDetails({
     return null;
   }
 
-  const universityEmail = checkout.lead.correo_universitario.endsWith(
+  const universityEmail = checkout.lead.correo_universitario?.endsWith(
     "@ukuepa.com",
   )
     ? checkout.lead.correo_universitario

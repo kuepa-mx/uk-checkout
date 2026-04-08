@@ -23,12 +23,7 @@ import { updateCheckout } from "@/app/actions/checkout";
 import { format } from "date-fns";
 import PaymentPills from "./payment-pills";
 import { TPaymentPillProps } from "./payment-pill";
-import {
-  useCallback,
-  useEffect,
-  useState,
-  useTransition,
-} from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { cn, APERTURE_DATES } from "@/lib/utils";
 import { Spinner } from "./ui/spinner";
 import { useRouter } from "next/navigation";
@@ -46,7 +41,6 @@ import {
 } from "./ui/accordion";
 import CheckoutCard from "./checkout-card";
 import InfoMessage from "./info-message";
-
 
 function getApertureDateOptions() {
   // Return the 2 closest dates after the current date
@@ -95,13 +89,13 @@ export default function CheckoutForm({
       career: checkout.lead?.carrera?.carrera_id || "",
       startingDate: checkout.selected_fecha_inicio || "",
       discountType:
-        checkout.selected_plan_type || getDefaultPaymentOption(paymentOptions).id,
-      totalAmount:
-        checkout.selected_plan_type ?
-          paymentOptions.find(
-            (option) => option.id === checkout.selected_plan_type
-          )?.final_price ?? 0 :
-          getDefaultPaymentOption(paymentOptions).final_price,
+        checkout.selected_plan_type ||
+        getDefaultPaymentOption(paymentOptions).id,
+      totalAmount: checkout.selected_plan_type
+        ? (paymentOptions.find(
+            (option) => option.id === checkout.selected_plan_type,
+          )?.final_price ?? 0)
+        : getDefaultPaymentOption(paymentOptions).final_price,
     },
     resolver: yupResolver(checkoutFormSchema, {
       strict: true,
@@ -119,19 +113,18 @@ export default function CheckoutForm({
   const [isPending, startTransition] = useTransition();
   const onSubmit = useCallback<SubmitHandler<TCheckoutForm>>(
     async (data) => {
-      console.log("Submitting form", data);
       const discount = discounts.find(
-        (discount) => discount.descuento_id === data.discountType
+        (discount) => discount.descuento_id === data.discountType,
       );
       const career = careers.find(
-        (career) => career.carrera_id === data.career
+        (career) => career.carrera_id === data.career,
       );
       if (!career) {
         throw new Error(`Carrera no encontrada para el ID: ${data.career}`);
       }
       if (!discount) {
         throw new Error(
-          `Descuento no encontrado para el ID: ${data.discountType}`
+          `Descuento no encontrado para el ID: ${data.discountType}`,
         );
       }
 
@@ -139,15 +132,14 @@ export default function CheckoutForm({
         checkoutFormSchema.cast(data),
         checkout,
         discount,
-        career
+        career,
       );
-      console.log("Payment link", paymentLink);
       if (paymentLink.paymentUrl) {
         window.open(paymentLink.paymentUrl, "_blank");
       }
       router.refresh();
     },
-    [careers, discounts, checkout, router]
+    [careers, discounts, checkout, router],
   );
 
   useEffect(() => {
@@ -205,10 +197,10 @@ export default function CheckoutForm({
           onPrevClick={() => setConfirmationStep(false)}
           onConfirmClick={form.handleSubmit(onSubmit)}
           career={careers.find(
-            (career) => career.carrera_id === selectedCareerId
+            (career) => career.carrera_id === selectedCareerId,
           )}
           selectedPaymentOption={paymentOptions.find(
-            (option) => option.id === discountType
+            (option) => option.id === discountType,
           )}
         />
       </CheckoutCard>
@@ -222,10 +214,10 @@ export default function CheckoutForm({
           <form
             className={cn(
               "space-y-2 grow flex flex-col w-full",
-              isLoading && "pointer-events-none"
+              isLoading && "pointer-events-none",
             )}
             onSubmit={form.handleSubmit(onSubmit, (errors) => {
-              console.log("Form errors", errors);
+              console.error("Form errors", errors);
             })}
           >
             {/* <InfoMessage /> */}
@@ -266,11 +258,15 @@ export default function CheckoutForm({
                       onValueChange={(value) => {
                         startTransition(async () => {
                           field.onChange(value);
-                          await update<TLead>(Entity.LEAD, checkout.lead.lead_id, {
-                            carrera: {
-                              carrera_id: value,
+                          await update<TLead>(
+                            Entity.LEAD,
+                            checkout.lead.lead_id,
+                            {
+                              carrera: {
+                                carrera_id: value,
+                              },
                             },
-                          });
+                          );
                           router.refresh();
                         });
                       }}
@@ -302,7 +298,9 @@ export default function CheckoutForm({
                 name="startingDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FieldLabel htmlFor="starting-date">Fecha de inicio</FieldLabel>
+                    <FieldLabel htmlFor="starting-date">
+                      Fecha de inicio
+                    </FieldLabel>
                     <Select
                       onValueChange={(value) => {
                         startTransition(async () => {
@@ -341,12 +339,15 @@ export default function CheckoutForm({
               type="single"
               collapsible
               defaultValue="payment"
-            // disabled={!isCheckoutFormCardValid}
+              // disabled={!isCheckoutFormCardValid}
             >
-              <AccordionItem value="payment" data-error={!isCheckoutFormCardValid}>
-                <AccordionTrigger className="text-sm font-semibold text-uk-blue-text ml-2">
+              <AccordionItem
+                value="payment"
+                data-error={!isCheckoutFormCardValid}
+              >
+                {/* <AccordionTrigger className="text-sm font-semibold text-uk-blue-text ml-2">
                   Opciones de pago
-                </AccordionTrigger>
+                </AccordionTrigger> */}
                 <AccordionContent>
                   <PaymentPills paymentOptions={paymentOptions} />
                 </AccordionContent>
@@ -367,12 +368,11 @@ export default function CheckoutForm({
                     startTransition(async () => {
                       await update<TLead>(Entity.LEAD, checkout.lead.lead_id, {
                         nombre: `${form.getValues("firstName")} ${form.getValues(
-                          "lastName"
+                          "lastName",
                         )}`,
                         carrera: {
                           carrera_id: form.getValues("career"),
                         },
-
                       });
 
                       setConfirmationStep(true);

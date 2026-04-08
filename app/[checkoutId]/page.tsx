@@ -48,11 +48,18 @@ export default async function CheckoutPage({
   const [careers, discounts] = await Promise.all([
     getAll(Entity.CAREER, {
       limit: "1000",
+      order: "carrera_nombre",
+      order_direction: "asc",
+      where: JSON.stringify({
+        carrera_activo: true,
+      }),
     }).then(
       ({ data }) =>
-        data?.sort((a, b) =>
-          a.carrera_nombre.localeCompare(b.carrera_nombre),
-        ) || ([] as TCareer[]),
+        data
+          ?.sort((a, b) => a.carrera_nombre.localeCompare(b.carrera_nombre))
+          .filter(
+            (career) => career.carrera_activo && career.cuenta?.cuenta_activo,
+          ) || [],
     ),
     getAll(Entity.DISCOUNT, {
       limit: "1000",
@@ -61,8 +68,6 @@ export default async function CheckoutPage({
       }),
     }),
   ]);
-
-  console.log(discounts.data);
 
   const career = careers.find(
     (career) => career.carrera_id === checkout.lead?.carrera?.carrera_id,
@@ -195,9 +200,12 @@ export default async function CheckoutPage({
   }
   logger.info("================================\n");
 
-  const discountToPaymentOption = (discount: TDiscount): TPaymentOption => {
+  const discountToPaymentOption = (
+    discount: TDiscount,
+  ): TPaymentOption | null => {
+    if (!discount || !discount.checkout) return null;
     const numberOfInstallments = Number(
-      discount.descuento_cuotas ?? career?.cuenta?.cuenta_cantidad_cuotas ?? 1,
+      discount?.descuento_cuotas ?? career?.cuenta?.cuenta_cantidad_cuotas ?? 1,
     );
     const originalPrice = installmentCost * numberOfInstallments;
     const finalPrice =
@@ -221,9 +229,10 @@ export default async function CheckoutPage({
   };
 
   const paymentOptions: TPaymentOption[] = discounts.data
-    .filter((d) => !!d.checkout)
+    .filter((d) => !!d?.checkout)
     .map(discountToPaymentOption)
-    .sort((a, b) => a.final_price - b.final_price);
+    .filter((d) => !!d)
+    .sort((a, b) => a?.final_price - b?.final_price);
 
   if (
     checkout.checkout_status === "payment_generated" ||
@@ -244,7 +253,7 @@ export default async function CheckoutPage({
 
   return (
     <CheckoutForm
-      careers={careers}
+      careers={careers.filter((c) => !isPsychologyMaster(c))}
       discounts={discounts.data}
       checkout={checkout}
       paymentOptions={paymentOptions}

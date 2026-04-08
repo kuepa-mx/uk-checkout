@@ -15,7 +15,6 @@ export async function getCheckout(
 ): Promise<TCheckout | null> {
   "use cache";
   cacheTag(`checkout:${checkoutId}`);
-  console.log("Getting checkout", checkoutId);
   const { data } = await api
     .get<TCheckout | null>(`/checkout/${checkoutId}`)
     .catch(() => {
@@ -29,13 +28,11 @@ export async function updateCheckout(
   checkoutId: string,
   body: TUpdateCheckoutDTO,
 ) {
-  console.log("Updating checkout", checkoutId, body);
   const { data } = await api.patch<TCheckout>(`/checkout/${checkoutId}`, body, {
     headers: {
       "Content-Type": "application/json",
     },
   });
-  console.log("Updated checkout", checkoutId);
   // revalidateTag(`checkout:${checkoutId}`, "max");
 
   return data;

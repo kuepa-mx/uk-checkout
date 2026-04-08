@@ -56,11 +56,11 @@
   --color-uk-orange: oklch(72.299% 0.18963 50.533);
   --radius: 0.625rem;
   --background: oklch(1 0 0);
-  --foreground: var(--color-uk-blue-text);
+  --foreground: var(--color-primary-foreground);
   --card: oklch(1 0 0);
-  --card-foreground: var(--color-uk-blue-text);
+  --card-foreground: var(--color-primary-foreground);
   --popover: oklch(1 0 0);
-  --popover-foreground: var(--color-uk-blue-text);
+  --popover-foreground: var(--color-primary-foreground);
   --primary: oklch(0.21 0.006 285.885);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.967 0.001 286.375);

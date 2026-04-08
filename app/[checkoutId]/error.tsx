@@ -26,9 +26,6 @@ export default function Error({
 }) {
   const [isPending, startTransition] = useTransition();
   const params = new URLSearchParams();
-  useEffect(() => {
-    console.error(error);
-  }, [error]);
   params.set("text", "Hola, tengo un problema con el pago de mi inscripción.");
   return (
     <div className="flex flex-col gap-2 items-start h-full grow">

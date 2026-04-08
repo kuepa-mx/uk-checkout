@@ -47,9 +47,9 @@ export default function Home() {
               });
               const response = await api.post<TCheckout>(
                 "/checkout/session/create",
-                validatedBody
+                validatedBody,
               );
-              console.log("response", response.data);
+
               redirect(`/${response.data.checkout_id}`);
             }}
           >
