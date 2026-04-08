@@ -54,8 +54,15 @@ export default async function CheckoutPage({
           a.carrera_nombre.localeCompare(b.carrera_nombre),
         ) || ([] as TCareer[]),
     ),
-    getAll(Entity.DISCOUNT),
+    getAll(Entity.DISCOUNT, {
+      limit: "1000",
+      where: JSON.stringify({
+        checkout: true,
+      }),
+    }),
   ]);
+
+  console.log(discounts.data);
 
   const career = careers.find(
     (career) => career.carrera_id === checkout.lead?.carrera?.carrera_id,
