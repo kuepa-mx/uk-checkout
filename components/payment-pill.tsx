@@ -70,10 +70,10 @@ export const PaymentPill = ({
           (loading ? "opacity-50" : "")
         }
       >
-        <div className="flex flex-col leading-tight">
+        <div className="flex flex-col leading-tight ">
           <div className="flex items-center gap-1">
             {isSelected ? <CheckCircleIcon className="size-4 text-uk-orange" /> : <CircleIcon className="size-4 text-uk-blue-text/50" />}
-            <span className="md:text-base text-sm font-semibold">{label}</span>
+            <span className="md:text-base text-sm font-semibold text-uk-blue-text">{label}</span>
             {/* Discount Percentage Badge */}
             {discount_percentage && discount_percentage > 0 ? (
               <span className="text-xs font-medium border text-uk-orange border-uk-orange px-1 rounded-lg">
@@ -83,7 +83,7 @@ export const PaymentPill = ({
             {/* Best Option Badge */}
             {bestOption && <p>✨</p>}
           </div>
-          <span className="flex items-center gap-1 mt-1 scale-90 md:scale-100 origin-left">
+          <span className="flex items-center gap-1 mt-1 scale-90 md:scale-100 origin-left text-uk-blue-text">
             <p className="text-xs font-light">Total:</p>
             {final_price !== installment_price && (
               <p className="text-xs opacity-85 font-light line-through">
@@ -95,14 +95,14 @@ export const PaymentPill = ({
             </p>
           </span>
         </div>
-        <div className="text-end space-y-1">
+        <div className="text-end space-y-1 text-uk-blue-text">
           {numberOfInstallments &&
             installmentsSubtitle[numberOfInstallments] && (
-              <p className="text-[10px] font-light text-nowrap">
+              <p className="text-[10px] font-light text-nowrap text-uk-blue-text">
                 {installmentsSubtitle[numberOfInstallments]}
               </p>
             )}
-          <p className="md:text-xl text-base font-bold">
+          <p className="md:text-xl text-base font-bold text-uk-blue-text">
             {currencyFormatter.format(installment_price ?? 0)}
           </p>
         </div>
