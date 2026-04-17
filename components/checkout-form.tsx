@@ -23,7 +23,13 @@ import { updateCheckout } from "@/app/actions/checkout";
 import { format } from "date-fns";
 import PaymentPills from "./payment-pills";
 import { TPaymentPillProps } from "./payment-pill";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 import { cn, APERTURE_DATES } from "@/lib/utils";
 import { Spinner } from "./ui/spinner";
 import { useRouter } from "next/navigation";
@@ -56,8 +62,11 @@ function getApertureDateOptions() {
   }));
 }
 
-function getDefaultPaymentOption(paymentOptions: TPaymentPillProps[]) {
-  const defaultOption = paymentOptions.find((option) => option.bestOption);
+function getDefaultPaymentOption(paymentOptions?: TPaymentPillProps[]) {
+  if (!paymentOptions) {
+    throw new Error("Payment options not found");
+  }
+  const defaultOption = paymentOptions?.find((option) => option.bestOption);
   if (defaultOption) {
     return defaultOption;
   }
@@ -77,6 +86,10 @@ export default function CheckoutForm({
   checkout: TCheckout;
   paymentOptions: TPaymentPillProps[];
 }) {
+  const defaultPaymentOption = useMemo(
+    () => getDefaultPaymentOption(paymentOptions),
+    [paymentOptions],
+  );
   const router = useRouter();
   const [firstName = "", lastName = ""] =
     checkout.lead?.nombre?.split(" ").filter(Boolean) || [];
@@ -88,14 +101,12 @@ export default function CheckoutForm({
       lastName: lastName,
       career: checkout.lead?.carrera?.carrera_id || "",
       startingDate: checkout.selected_fecha_inicio || "",
-      discountType:
-        checkout.selected_plan_type ||
-        getDefaultPaymentOption(paymentOptions).id,
+      discountType: checkout.selected_plan_type || defaultPaymentOption.id,
       totalAmount: checkout.selected_plan_type
         ? (paymentOptions.find(
             (option) => option.id === checkout.selected_plan_type,
           )?.final_price ?? 0)
-        : getDefaultPaymentOption(paymentOptions).final_price,
+        : defaultPaymentOption.final_price,
     },
     resolver: yupResolver(checkoutFormSchema, {
       strict: true,

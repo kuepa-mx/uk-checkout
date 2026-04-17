@@ -1,4 +1,4 @@
-import { removeAccents } from "../utils";
+import { removeAccents } from "@/lib/utils";
 import * as yup from "yup";
 
 export const checkoutFormSchema = yup.object().shape({

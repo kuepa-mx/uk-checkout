@@ -18,6 +18,11 @@ export function removeAccents(value: unknown): string {
     .replace(/[\u0300-\u036f]/g, ""); // remove the accent marks
 }
 
+export function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+
 export function isPsychologyMaster(career: TCareer) {
   const mastersPsychologyIds = [
     // Masters Psico

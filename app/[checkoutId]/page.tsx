@@ -8,6 +8,9 @@ import { TPaymentOption } from "@/components/payment-pill";
 import CheckoutCard from "@/components/checkout-card";
 import { handlePsychologyMasterCheckout } from "@/app/actions/checkout";
 import { redirect } from "next/navigation";
+import { isCheckoutValid as validated } from "@/lib/utils/checkout";
+
+const isDev = process.env.NODE_ENV === "development";
 
 export default async function CheckoutPage({
   params,
@@ -16,29 +19,13 @@ export default async function CheckoutPage({
 }) {
   const { checkoutId } = await params;
 
-  const checkout = await getById(Entity.CHECKOUT, checkoutId);
+  const checkout = validated(await getById(Entity.CHECKOUT, checkoutId));
 
   // Create logger with session context
   let logger = createLogger({
     sessionId: checkoutId,
     leadId: checkout?.lead?.lead_id,
   });
-
-  if (!checkout) {
-    logger.error("Checkout not found");
-    return <div>No se encontró el checkout</div>;
-  }
-
-  if (!checkout.lead?.carrera?.carrera_id) {
-    logger.error("Career not found");
-    // TODO: Show ask form for career
-    return <div>No se encontró la carrera</div>;
-  }
-  if (!checkout.lead?.pais?.pais_id) {
-    logger.error("Country not found");
-    // TODO: Show ask form for country
-    return <div>No se encontró el país</div>;
-  }
 
   // Update logger with confirmed leadId
   logger = logger.withContext({
@@ -65,6 +52,10 @@ export default async function CheckoutPage({
       limit: "1000",
       where: JSON.stringify({
         checkout: true,
+        // TODO: Add country and career filters
+        // inside discount there is two columns: paises and carreras
+        // both are arrays of strings, we need to filter those who contain
+        // the current's lead country and career
       }),
     }),
   ]);
@@ -72,6 +63,14 @@ export default async function CheckoutPage({
   const career = careers.find(
     (career) => career.carrera_id === checkout.lead?.carrera?.carrera_id,
   );
+  if (!career) {
+    logger.error("Career not found for checkout");
+    return (
+      <CheckoutCard>
+        <div>Error: No se encontró la carrera</div>
+      </CheckoutCard>
+    );
+  }
 
   const cost = await getAll(Entity.COST, {
     where: JSON.stringify({
@@ -135,6 +134,112 @@ export default async function CheckoutPage({
     }
   }
 
+  const discountToPaymentOption = (discount: TDiscount): TPaymentOption => {
+    const numberOfInstallments = Number(
+      discount?.descuento_cuotas ?? career?.cuenta?.cuenta_cantidad_cuotas ?? 1,
+    );
+    const originalPrice = installmentCost * numberOfInstallments;
+    const finalPrice =
+      originalPrice * (1 - Number(discount.descuento_porcentaje ?? 0));
+    const installmentPrice = finalPrice / numberOfInstallments;
+    return {
+      id: discount.descuento_id,
+      label: capitalize(discount.descuento_nombre),
+      subtitle:
+        Number(discount.descuento_porcentaje) > 0
+          ? `${Number(discount.descuento_porcentaje) * 100}% de descuento`
+          : "Inscripción inmediata",
+      discount_percentage: Number(discount.descuento_porcentaje ?? 0),
+      original_price: originalPrice,
+      // Best option is anual plan
+      bestOption: discount.descuento_nombre.toLowerCase().includes("anual"),
+      final_price: finalPrice,
+      installment_price: installmentPrice,
+      numberOfInstallments: numberOfInstallments,
+    };
+  };
+
+  const paymentOptions: TPaymentOption[] = discounts.data
+    .filter(
+      (d) =>
+        d.descuento_id &&
+        !!d?.checkout &&
+        d.paises?.includes(checkout.lead?.pais?.pais_id) &&
+        d.carreras?.includes(career?.carrera_id),
+    )
+    .map(discountToPaymentOption)
+    .sort((a, b) => a?.final_price - b?.final_price);
+
+  if (!paymentOptions.length) {
+    logger.error("No payment options found");
+    return (
+      <CheckoutCard>
+        <p className="text-sm font-medium text-uk-blue-text">
+          Error: No se encontraron opciones de pago
+        </p>
+        {isDev && (
+          <div className="flex flex-col gap-1 p-2 bg-uk-border/10 rounded-md m-2 whitespace-pre overflow-x-auto max-w-full text-xs">
+            <code>Pais: {JSON.stringify(checkout.lead?.pais, null, 2)}</code>
+            <code>Career: {JSON.stringify(career, null, 2)}</code>
+          </div>
+        )}
+      </CheckoutCard>
+    );
+  }
+
+  logCheckoutInformation(logger, {
+    checkout,
+    career,
+    cost,
+    installmentCost,
+    paymentOptions,
+  });
+
+  if (
+    checkout.checkout_status === "payment_generated" ||
+    checkout.checkout_status === "paid"
+  ) {
+    const discount = discounts.data.find(
+      (discount) => discount.descuento_id === checkout.selected_plan_type,
+    )!;
+    return (
+      <CheckoutCard>
+        <CheckoutDetails
+          checkout={checkout}
+          plan={discountToPaymentOption(discount)}
+        />
+      </CheckoutCard>
+    );
+  }
+
+  return (
+    <CheckoutForm
+      careers={careers.filter((c) => !isPsychologyMaster(c))}
+      discounts={discounts.data}
+      checkout={checkout}
+      paymentOptions={paymentOptions}
+    />
+  );
+}
+
+/* ------------------------------------------------ LOGGING FUNCTIONS ------------------------------------------------ */
+type Logger = ReturnType<typeof createLogger>;
+type TData = {
+  checkout: TCheckout;
+  career?: TCareer;
+  cost?: TCost;
+  installmentCost?: number;
+  paymentOptions?: TPaymentOption[];
+};
+
+function logCheckoutInformation(logger: Logger, data: TData) {
+  const {
+    checkout,
+    career = undefined,
+    cost = undefined,
+    installmentCost = undefined,
+    paymentOptions = undefined,
+  } = data;
   // Log checkout information
   logger.info("=== CHECKOUT INFORMATION ===");
   logger.info("Checkout ID:", checkout.checkout_id);
@@ -200,63 +305,16 @@ export default async function CheckoutPage({
   }
   logger.info("================================\n");
 
-  const discountToPaymentOption = (
-    discount: TDiscount,
-  ): TPaymentOption | null => {
-    if (!discount || !discount.checkout) return null;
-    const numberOfInstallments = Number(
-      discount?.descuento_cuotas ?? career?.cuenta?.cuenta_cantidad_cuotas ?? 1,
-    );
-    const originalPrice = installmentCost * numberOfInstallments;
-    const finalPrice =
-      originalPrice * (1 - Number(discount.descuento_porcentaje ?? 0));
-    const installmentPrice = finalPrice / numberOfInstallments;
-    return {
-      id: discount.descuento_id,
-      label: capitalize(discount.descuento_nombre),
-      subtitle:
-        Number(discount.descuento_porcentaje) > 0
-          ? `${Number(discount.descuento_porcentaje) * 100}% de descuento`
-          : "Inscripción inmediata",
-      discount_percentage: Number(discount.descuento_porcentaje ?? 0),
-      original_price: originalPrice,
-      // Best option is anual plan
-      bestOption: discount.descuento_nombre.toLowerCase().includes("anual"),
-      final_price: finalPrice,
-      installment_price: installmentPrice,
-      numberOfInstallments: numberOfInstallments,
-    };
-  };
-
-  const paymentOptions: TPaymentOption[] = discounts.data
-    .filter((d) => !!d?.checkout)
-    .map(discountToPaymentOption)
-    .filter((d) => !!d)
-    .sort((a, b) => a?.final_price - b?.final_price);
-
-  if (
-    checkout.checkout_status === "payment_generated" ||
-    checkout.checkout_status === "paid"
-  ) {
-    const discount = discounts.data.find(
-      (discount) => discount.descuento_id === checkout.selected_plan_type,
-    )!;
-    return (
-      <CheckoutCard>
-        <CheckoutDetails
-          checkout={checkout}
-          plan={discountToPaymentOption(discount)}
-        />
-      </CheckoutCard>
-    );
+  // Log payment options information
+  logger.info("=== PAYMENT OPTIONS INFORMATION ===");
+  if (paymentOptions) {
+    paymentOptions.forEach((paymentOption) => {
+      logger.info("Payment Option ID:", paymentOption.id);
+      logger.info("Payment Option Label:", paymentOption.label);
+      logger.info("Payment Option Subtitle:", paymentOption.subtitle);
+    });
+    logger.info("================================\n");
+  } else {
+    logger.error("Payment options not found");
   }
-
-  return (
-    <CheckoutForm
-      careers={careers.filter((c) => !isPsychologyMaster(c))}
-      discounts={discounts.data}
-      checkout={checkout}
-      paymentOptions={paymentOptions}
-    />
-  );
 }
