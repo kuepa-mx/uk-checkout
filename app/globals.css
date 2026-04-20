@@ -60,7 +60,7 @@
   --card: oklch(1 0 0);
   --card-foreground: var(--color-uk-blue-text);
   --popover: oklch(1 0 0);
-  --popover-foreground: var(--color-primary-foreground);
+  --popover-foreground: var(--color-uk-blue-text);
   --primary: var(--color-uk-blue-bg); /* uk-blue-bg */
   --primary-foreground: oklch(0.985 0 0); /* white */
   --secondary: oklch(0.967 0.001 286.375);

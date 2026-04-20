@@ -52,10 +52,6 @@ export default async function CheckoutPage({
       limit: "1000",
       where: JSON.stringify({
         checkout: true,
-        // TODO: Add country and career filters
-        // inside discount there is two columns: paises and carreras
-        // both are arrays of strings, we need to filter those who contain
-        // the current's lead country and career
       }),
     }),
   ]);
