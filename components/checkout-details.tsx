@@ -92,6 +92,7 @@ export default function CheckoutDetails({
             original_price={selectedPaymentOption?.original_price}
             final_price={selectedPaymentOption?.final_price}
             installment_price={selectedPaymentOption?.installment_price}
+            country={selectedPaymentOption.country}
           />
         </div>
       )}

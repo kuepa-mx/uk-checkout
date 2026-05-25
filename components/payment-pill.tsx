@@ -1,4 +1,5 @@
 import { CheckCircleIcon, CircleIcon } from "lucide-react";
+import { formatCurrency } from "@/lib/utils/currency";
 import { Spinner } from "./ui/spinner";
 
 export type TPaymentOption = {
@@ -11,6 +12,7 @@ export type TPaymentOption = {
   installment_price: number;
   numberOfInstallments?: number;
   bestOption?: boolean;
+  country?: TCountry;
 };
 
 export type TPaymentPillProps = {
@@ -18,13 +20,6 @@ export type TPaymentPillProps = {
   isSelected?: boolean;
   loading?: boolean;
 } & TPaymentOption;
-
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 0,
-});
 
 const installmentsSubtitle: Record<number, string> = {
   4: "Hasta 4 cuotas de",
@@ -43,6 +38,7 @@ export const PaymentPill = ({
   final_price,
   numberOfInstallments,
   bestOption,
+  country,
 }: TPaymentPillProps) => {
   return (
     <button
@@ -87,11 +83,11 @@ export const PaymentPill = ({
             <p className="text-xs font-light">Total:</p>
             {final_price !== installment_price && (
               <p className="text-xs opacity-85 font-light line-through">
-                {currencyFormatter.format(original_price ?? 0)}
+                {formatCurrency(original_price ?? 0, country)}
               </p>
             )}
             <p className="text-xs font-semibold">
-              {currencyFormatter.format(final_price ?? 0)}
+              {formatCurrency(final_price ?? 0, country)}
             </p>
           </span>
         </div>
@@ -103,7 +99,7 @@ export const PaymentPill = ({
               </p>
             )}
           <p className="md:text-xl text-base font-bold text-uk-blue-text">
-            {currencyFormatter.format(installment_price ?? 0)}
+            {formatCurrency(installment_price ?? 0, country)}
           </p>
         </div>
       </div>

@@ -152,6 +152,7 @@ export default async function CheckoutPage({
       final_price: finalPrice,
       installment_price: installmentPrice,
       numberOfInstallments: numberOfInstallments,
+      country: checkout.lead.pais,
     };
   };
 
