@@ -6,8 +6,10 @@ import { useTransition } from "react";
 
 export default function PaymentPills({
   paymentOptions,
+  defaultValue,
 }: {
   paymentOptions: TPaymentPillProps[];
+  defaultValue?: string;
 }) {
   const [isPending, startTransition] = useTransition();
   const { control, setValue } = useFormContext<TCheckoutForm>();
@@ -15,6 +17,7 @@ export default function PaymentPills({
     <FormField
       control={control}
       name="discountType"
+      defaultValue={defaultValue}
       disabled={isPending}
       render={({ field }) => (
         <FormItem>

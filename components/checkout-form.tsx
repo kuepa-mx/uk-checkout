@@ -32,19 +32,14 @@ import {
 } from "react";
 import { cn, APERTURE_DATES } from "@/lib/utils";
 import { Spinner } from "./ui/spinner";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { checkoutFormSchema } from "@/lib/api/schemas";
 import { handleCheckoutSubmission } from "@/app/actions/checkout";
 import { update } from "@/app/actions/entity";
 import { Entity } from "@/lib/enum/entity";
 import InscriptionDataReviewStep from "./checkout-confirmation";
 import FormSubtitle from "./checkout-form-subtitle";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "./ui/accordion";
+import { Accordion, AccordionContent, AccordionItem } from "./ui/accordion";
 import CheckoutCard from "./checkout-card";
 import InfoMessage from "./info-message";
 
@@ -91,6 +86,8 @@ export default function CheckoutForm({
     [paymentOptions],
   );
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedPlan = searchParams.get("sp") ?? "";
   const [firstName = "", lastName = ""] =
     checkout.lead?.nombre?.split(" ").filter(Boolean) || [];
   const form = useForm<TCheckoutForm>({
@@ -346,21 +343,16 @@ export default function CheckoutForm({
               />
             </FieldRow>
 
-            <Accordion
-              type="single"
-              collapsible
-              defaultValue="payment"
-              // disabled={!isCheckoutFormCardValid}
-            >
+            <Accordion type="single" collapsible defaultValue="payment">
               <AccordionItem
                 value="payment"
                 data-error={!isCheckoutFormCardValid}
               >
-                {/* <AccordionTrigger className="text-sm font-semibold text-uk-blue-text ml-2">
-                  Opciones de pago
-                </AccordionTrigger> */}
                 <AccordionContent>
-                  <PaymentPills paymentOptions={paymentOptions} />
+                  <PaymentPills
+                    paymentOptions={paymentOptions}
+                    defaultValue={selectedPlan}
+                  />
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
