@@ -100,8 +100,20 @@ export default function CheckoutForm({
     [paymentOptions, selectedPlan],
   );
 
-  const [firstName = "", lastName = ""] =
-    checkout.lead?.nombre?.split(" ").filter(Boolean) || [];
+  const [firstName = "", lastName = ""] = useMemo(() => {
+    const name = checkout.lead?.nombre;
+    if (!name) {
+      return ["", ""];
+    }
+    if (name.includes(" ")) {
+      return name.split(" ");
+    }
+    if (name.startsWith("checkout:")) {
+      return ["", ""];
+    }
+
+    return [checkout.lead.nombre, ""];
+  }, [checkout.lead.nombre]);
   const form = useForm<TCheckoutForm>({
     mode: "all",
     reValidateMode: "onBlur",
