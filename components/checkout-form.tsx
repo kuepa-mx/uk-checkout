@@ -57,15 +57,22 @@ function getApertureDateOptions() {
   }));
 }
 
-function getDefaultPaymentOption(paymentOptions?: TPaymentPillProps[]) {
+function getDefaultPaymentOption(
+  paymentOptions?: TPaymentPillProps[],
+  selectedPlan?: string,
+) {
   if (!paymentOptions) {
     throw new Error("Payment options not found");
   }
-  const defaultOption = paymentOptions?.find((option) => option.bestOption);
-  if (defaultOption) {
-    return defaultOption;
+  if (selectedPlan) {
+    return (
+      paymentOptions.find((option) => option.id === selectedPlan) ??
+      paymentOptions[0]
+    );
   }
-  return paymentOptions[0];
+  return (
+    paymentOptions?.find((option) => option.bestOption) ?? paymentOptions[0]
+  );
 }
 
 export type TCheckoutForm = yup.InferType<typeof checkoutFormSchema>;
@@ -81,13 +88,18 @@ export default function CheckoutForm({
   checkout: TCheckout;
   paymentOptions: TPaymentPillProps[];
 }) {
-  const defaultPaymentOption = useMemo(
-    () => getDefaultPaymentOption(paymentOptions),
-    [paymentOptions],
-  );
   const router = useRouter();
   const searchParams = useSearchParams();
-  const selectedPlan = searchParams.get("sp") ?? "";
+
+  const selectedPlan = useMemo(
+    () => searchParams.get("sp") ?? "",
+    [searchParams],
+  );
+  const defaultPaymentOption = useMemo(
+    () => getDefaultPaymentOption(paymentOptions, selectedPlan),
+    [paymentOptions, selectedPlan],
+  );
+
   const [firstName = "", lastName = ""] =
     checkout.lead?.nombre?.split(" ").filter(Boolean) || [];
   const form = useForm<TCheckoutForm>({

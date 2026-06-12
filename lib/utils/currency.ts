@@ -10,9 +10,9 @@ const COUNTRY_CURRENCY_MAP: Record<string, CurrencyFormatConfig> = {
   Bolivia: { locale: "es-BO", currency: "BOB" },
   Honduras: { locale: "es-HN", currency: "HNL" },
   Uruguay: { locale: "es-UY", currency: "UYU" },
-  "El Salvador": { locale: "es-SV", currency: "USD" },
+  "El Salvador": { locale: "es-SV", currency: "SVC" },
   Panama: { locale: "es-PA", currency: "PAB" },
-  "Republica Dominicana": { locale: "es-DO", currency: "USD" },
+  "Republica Dominicana": { locale: "es-DO", currency: "DOP" },
   Paraguay: { locale: "es-PY", currency: "PYG" },
   Ecuador: { locale: "es-EC", currency: "USD" },
   Nicaragua: { locale: "es-NI", currency: "NIO" },
@@ -33,11 +33,9 @@ const DEFAULT_CURRENCY_CONFIG: CurrencyFormatConfig = {
 export function getCurrencyFormatConfig(
   country?: TCountry,
 ): CurrencyFormatConfig {
-  console.log("country", country);
   if (!country?.pais_nombre) {
     return DEFAULT_CURRENCY_CONFIG;
   }
-
   return COUNTRY_CURRENCY_MAP[country.pais_nombre] ?? DEFAULT_CURRENCY_CONFIG;
 }
 
