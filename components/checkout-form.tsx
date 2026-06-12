@@ -397,9 +397,11 @@ export default function CheckoutForm({
                         form.getValues("firstName"),
                         form.getValues("lastName"),
                       ];
+                      const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@ukuepa.com`;
                       await update<TLead>(Entity.LEAD, checkout.lead.lead_id, {
                         nombre: `${firstName} ${lastName}`,
-                        email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@ukuepa.com`,
+                        email: email,
+                        correo_universitario: email,
                         carrera: {
                           carrera_id: form.getValues("career"),
                         },
