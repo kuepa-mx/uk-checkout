@@ -393,10 +393,13 @@ export default function CheckoutForm({
                     }
                     // Update lead with the data
                     startTransition(async () => {
+                      const [firstName, lastName] = [
+                        form.getValues("firstName"),
+                        form.getValues("lastName"),
+                      ];
                       await update<TLead>(Entity.LEAD, checkout.lead.lead_id, {
-                        nombre: `${form.getValues("firstName")} ${form.getValues(
-                          "lastName",
-                        )}`,
+                        nombre: `${firstName} ${lastName}`,
+                        email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@ukuepa.com`,
                         carrera: {
                           carrera_id: form.getValues("career"),
                         },
