@@ -1,12 +1,16 @@
 import CheckoutForm from "@/components/checkout-form";
-import { getAll, getById } from "@/app/actions/entity";
+import { getAll } from "@/app/actions/entity";
 import { Entity } from "@/lib/enum/entity";
 import CheckoutDetails from "@/components/checkout-details";
 import { capitalize, isPsychologyMaster } from "@/lib/utils";
 import { createLogger } from "@/lib/logger";
 import { TPaymentOption } from "@/components/payment-pill";
 import CheckoutCard from "@/components/checkout-card";
-import { handlePsychologyMasterCheckout } from "@/app/actions/checkout";
+import CheckoutExpired from "@/components/checkout-expired";
+import {
+  getCheckout,
+  handlePsychologyMasterCheckout,
+} from "@/app/actions/checkout";
 import { redirect } from "next/navigation";
 import { isCheckoutValid as validated } from "@/lib/utils/checkout";
 
@@ -19,7 +23,7 @@ export default async function CheckoutPage({
 }) {
   const { checkoutId } = await params;
 
-  const checkout = validated(await getById(Entity.CHECKOUT, checkoutId));
+  const checkout = validated(await getCheckout(checkoutId));
 
   // Create logger with session context
   let logger = createLogger({
@@ -45,8 +49,8 @@ export default async function CheckoutPage({
         data
           ?.sort((a, b) => a.carrera_nombre.localeCompare(b.carrera_nombre))
           .filter(
-            (career) => career.carrera_activo && career.cuenta?.cuenta_activo,
-          ) || [],
+            (career) => career.carrera_activo && career.cuenta?.cuenta_activo
+          ) || []
     ),
     getAll(Entity.DISCOUNT, {
       limit: "1000",
@@ -57,7 +61,7 @@ export default async function CheckoutPage({
   ]);
 
   const career = careers.find(
-    (career) => career.carrera_id === checkout.lead?.carrera?.carrera_id,
+    (career) => career.carrera_id === checkout.lead?.carrera?.carrera_id
   );
   if (!career) {
     logger.error("Career not found for checkout");
@@ -107,7 +111,7 @@ export default async function CheckoutPage({
 
       try {
         logger.info(
-          "Psychology master detected, auto-generating payment link...",
+          "Psychology master detected, auto-generating payment link..."
         );
         await handlePsychologyMasterCheckout({
           checkout,
@@ -117,7 +121,7 @@ export default async function CheckoutPage({
       } catch (error) {
         logger.error(
           "Failed to auto-generate psychology master payment:",
-          error,
+          error
         );
         return (
           <CheckoutCard>
@@ -153,13 +157,13 @@ export default async function CheckoutPage({
         d?.descuento_id &&
         !!d?.checkout &&
         d.paises?.includes(checkout.lead?.pais?.pais_id) &&
-        d.carreras?.includes(career?.carrera_id),
+        d.carreras?.includes(career?.carrera_id)
     )
     .map((discount: TDiscount): TPaymentOption => {
       const numberOfInstallments = Number(
         discount?.descuento_cuotas ??
           career?.cuenta?.cuenta_cantidad_cuotas ??
-          1,
+          1
       );
       const originalPrice = installmentCost * numberOfInstallments;
       const finalPrice =
@@ -198,11 +202,19 @@ export default async function CheckoutPage({
     checkout.checkout_status === "paid"
   ) {
     const plan = paymentOptions.find(
-      (option) => option.id === checkout.selected_plan_type,
+      (option) => option.id === checkout.selected_plan_type
     );
     return (
       <CheckoutCard>
         <CheckoutDetails checkout={checkout} plan={plan} />
+      </CheckoutCard>
+    );
+  }
+
+  if (checkout.is_expired) {
+    return (
+      <CheckoutCard>
+        <CheckoutExpired expiresAt={checkout.expires_at} />
       </CheckoutCard>
     );
   }
@@ -277,7 +289,7 @@ function logCheckoutInformation(logger: Logger, data: TData) {
     logger.info("Account ID:", career.cuenta?.cuenta_id);
     logger.info(
       "Number of Installments:",
-      career.cuenta?.cuenta_cantidad_cuotas,
+      career.cuenta?.cuenta_cantidad_cuotas
     );
     logger.info("Account Active:", career.cuenta?.cuenta_activo);
   } else {
@@ -292,7 +304,7 @@ function logCheckoutInformation(logger: Logger, data: TData) {
     logger.info("Installment Cost:", installmentCost);
     logger.info(
       "Number of Installments:",
-      career?.cuenta?.cuenta_cantidad_cuotas ?? "N/A",
+      career?.cuenta?.cuenta_cantidad_cuotas ?? "N/A"
     );
     logger.info("Total Career Cost:", cost.costo_carrera);
   } else {

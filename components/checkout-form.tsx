@@ -95,9 +95,16 @@ export default function CheckoutForm({
     () => searchParams.get("sp") ?? "",
     [searchParams],
   );
+  const preselectedId = useMemo(
+    () =>
+      checkout.descuento_id ??
+      checkout.selected_plan_type ??
+      (selectedPlan || undefined),
+    [checkout.descuento_id, checkout.selected_plan_type, selectedPlan],
+  );
   const defaultPaymentOption = useMemo(
-    () => getDefaultPaymentOption(paymentOptions, selectedPlan),
-    [paymentOptions, selectedPlan],
+    () => getDefaultPaymentOption(paymentOptions, preselectedId),
+    [paymentOptions, preselectedId],
   );
 
   const [firstName = "", lastName = ""] = useMemo(() => {
@@ -122,12 +129,8 @@ export default function CheckoutForm({
       lastName: lastName,
       career: checkout.lead?.carrera?.carrera_id || "",
       startingDate: checkout.selected_fecha_inicio || "",
-      discountType: checkout.selected_plan_type || defaultPaymentOption.id,
-      totalAmount: checkout.selected_plan_type
-        ? (paymentOptions.find(
-            (option) => option.id === checkout.selected_plan_type,
-          )?.final_price ?? 0)
-        : defaultPaymentOption.final_price,
+      discountType: preselectedId ?? defaultPaymentOption.id,
+      totalAmount: defaultPaymentOption.final_price,
     },
     resolver: yupResolver(checkoutFormSchema, {
       strict: true,
@@ -375,7 +378,7 @@ export default function CheckoutForm({
                 <AccordionContent>
                   <PaymentPills
                     paymentOptions={paymentOptions}
-                    defaultValue={selectedPlan}
+                    defaultValue={preselectedId}
                   />
                 </AccordionContent>
               </AccordionItem>

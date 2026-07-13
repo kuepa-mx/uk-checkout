@@ -9,6 +9,7 @@ export const api = axios.create({
   timeout: 3_000,
   headers: {
     "x-origin": `Checkout-SelfService-${ENV}`,
+    "ngrok-skip-browser-warning": "true",
   },
 });
 

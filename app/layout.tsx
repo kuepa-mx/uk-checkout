@@ -79,9 +79,11 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-uk-blue-bg`}
-      >
-        <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light">
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-uk-blue-bg`}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          forcedTheme="light">
           {children}
           <div className="fixed bottom-1 right-1">
             <Suspense fallback={null}>

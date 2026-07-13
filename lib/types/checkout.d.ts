@@ -29,6 +29,13 @@ declare type TCheckout = {
   created_at: string;
   updated_at: string;
   paid_at: string | null;
+  descuento_id?: string | null;
+  descuento_porcentaje?: number;
+  checkout_type?: string | null;
+  is_expired?: boolean;
+  checkout_url?: string;
+  email?: string;
+  telefono_lada?: string;
 };
 
 declare type TUpdateCheckoutDTO = {
