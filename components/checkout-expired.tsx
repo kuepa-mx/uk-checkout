@@ -52,7 +52,7 @@ export default function CheckoutExpired({ expiresAt }: { expiresAt?: string }) {
           rel="noopener noreferrer">
           <Button
             variant="outline"
-            className="border-green-600/80 shadow-sm shadow-green-500/20">
+            className="border-green-600/80 font-semibold shadow-sm shadow-green-500/20">
             <WhatsappIcon className="text-green-500" />
             {SUPPORT_NUMBER}
           </Button>
