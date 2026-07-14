@@ -189,6 +189,21 @@ export default async function CheckoutPage({
     })
     .sort((a, b) => a?.final_price - b?.final_price);
 
+  // El bot puede crear el checkout con un descuento ya negociado con el lead. En ese caso
+  // no hay nada que elegir: solo se muestra ese plan. Si el descuento asignado no está
+  // entre las opciones válidas para su país/carrera, mostramos todas para no frenar la venta.
+  const assignedOption = checkout.descuento_id
+    ? paymentOptions.find((option) => option.id === checkout.descuento_id)
+    : undefined;
+  const availableOptions = assignedOption ? [assignedOption] : paymentOptions;
+
+  if (checkout.descuento_id && !assignedOption) {
+    logger.error(
+      "Assigned discount is not among the valid payment options; showing all",
+      checkout.descuento_id
+    );
+  }
+
   logCheckoutInformation(logger, {
     checkout,
     career,
@@ -211,7 +226,20 @@ export default async function CheckoutPage({
     );
   }
 
-  if (checkout.is_expired) {
+  // is_expired lo calcula el backend en el momento del GET, y getCheckout está cacheado:
+  // si el checkout vence por paso del tiempo, el valor cacheado queda mintiendo. expires_at
+  // es un instante fijo, así que compararlo contra "ahora" en cada render siempre da bien.
+  // Solo aplica a checkouts con descuento asignado (los de bot), que es donde el backend
+  // enforza la expiración.
+  const expiresAt = checkout.expires_at ? new Date(checkout.expires_at) : null;
+  const hasValidExpiry =
+    expiresAt !== null && !Number.isNaN(expiresAt.getTime());
+  const isExpired =
+    Boolean(checkout.descuento_id) &&
+    (checkout.is_expired === true ||
+      (hasValidExpiry && expiresAt < new Date()));
+
+  if (isExpired) {
     return (
       <CheckoutCard>
         <CheckoutExpired expiresAt={checkout.expires_at} />
@@ -224,7 +252,7 @@ export default async function CheckoutPage({
       careers={careers.filter((c) => !isPsychologyMaster(c))}
       discounts={discounts.data}
       checkout={checkout}
-      paymentOptions={paymentOptions}
+      paymentOptions={availableOptions}
     />
   );
 }

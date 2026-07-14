@@ -4,7 +4,7 @@ import { TCheckoutForm } from "@/components/checkout-form";
 import { getGroupsByCareerCodeAndOpeningDate } from "@/lib/api";
 import { Entity } from "@/lib/enum/entity";
 import { api } from "@/lib/http";
-import { cacheTag } from "next/cache";
+import { cacheTag, updateTag } from "next/cache";
 import { getById, update } from "./entity";
 import { getCareerCost } from "./career";
 import { generatePaymentLink } from "./payments";
@@ -20,16 +20,26 @@ export async function getCheckout(
   return data;
 }
 
-export async function updateCheckout(
-  checkoutId: string,
-  body: TUpdateCheckoutDTO
-) {
+async function patchCheckout(checkoutId: string, body: TUpdateCheckoutDTO) {
   const { data } = await api.patch<TCheckout>(`/checkout/${checkoutId}`, body, {
     headers: {
       "Content-Type": "application/json",
     },
   });
-  // revalidateTag(`checkout:${checkoutId}`, "max");
+
+  return data;
+}
+
+export async function updateCheckout(
+  checkoutId: string,
+  body: TUpdateCheckoutDTO
+) {
+  const data = await patchCheckout(checkoutId, body);
+  // El checkout está cacheado ("use cache" + cacheTag en getCheckout). Sin esto, el front
+  // sigue sirviendo el estado previo: plan viejo, o un checkout ya vencido como vigente.
+  // updateTag y no revalidateTag: este último es stale-while-revalidate y, por diseño, los
+  // Server Actions no leen sus propias escrituras.
+  updateTag(`checkout:${checkoutId}`);
 
   return data;
 }
@@ -207,7 +217,12 @@ export async function handlePsychologyMasterCheckout(params: {
     updateData.telefono_lada = checkout.lead.telefono_lada;
   }
 
-  await updateCheckout(checkout.checkout_id, updateData);
+  // Este flujo corre durante el render del Server Component (page.tsx lo invoca
+  // fuera de una Server Action), y Next prohíbe invalidar cache ("use cache") en
+  // fase de render. Por eso usamos patchCheckout en vez de updateCheckout: mismo
+  // PATCH pero sin updateTag, igual que se comportaba este flujo antes de que
+  // updateCheckout empezara a invalidar el tag internamente.
+  await patchCheckout(checkout.checkout_id, updateData);
 
   return { paymentUrl, paymentId };
 }
