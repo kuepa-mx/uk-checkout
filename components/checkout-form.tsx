@@ -223,7 +223,15 @@ export default function CheckoutForm({
   if (submitFailed) {
     return (
       <CheckoutCard>
-        <CheckoutSubmitError onRetry={() => setSubmitFailed(false)} />
+        <CheckoutSubmitError
+          onRetry={() => {
+            setSubmitFailed(false);
+            // Si el submit falló porque el checkout venció, refrescar hace que page.tsx
+            // reevalúe is_expired y muestre el cartel de expirado en vez de reintentar
+            // un submit que va a fallar igual.
+            router.refresh();
+          }}
+        />
       </CheckoutCard>
     );
   }

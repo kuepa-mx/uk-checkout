@@ -1,3 +1,4 @@
+"use client";
 import WhatsappIcon from "@/components/icons/WhatsappIcon";
 import { Button } from "@/components/ui/button";
 import { AlertCircleIcon } from "lucide-react";
