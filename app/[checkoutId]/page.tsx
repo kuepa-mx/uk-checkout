@@ -189,6 +189,21 @@ export default async function CheckoutPage({
     })
     .sort((a, b) => a?.final_price - b?.final_price);
 
+  // El bot puede crear el checkout con un descuento ya negociado con el lead. En ese caso
+  // no hay nada que elegir: solo se muestra ese plan. Si el descuento asignado no está
+  // entre las opciones válidas para su país/carrera, mostramos todas para no frenar la venta.
+  const assignedOption = checkout.descuento_id
+    ? paymentOptions.find((option) => option.id === checkout.descuento_id)
+    : undefined;
+  const availableOptions = assignedOption ? [assignedOption] : paymentOptions;
+
+  if (checkout.descuento_id && !assignedOption) {
+    logger.error(
+      "Assigned discount is not among the valid payment options; showing all",
+      checkout.descuento_id
+    );
+  }
+
   logCheckoutInformation(logger, {
     checkout,
     career,
@@ -224,7 +239,7 @@ export default async function CheckoutPage({
       careers={careers.filter((c) => !isPsychologyMaster(c))}
       discounts={discounts.data}
       checkout={checkout}
-      paymentOptions={paymentOptions}
+      paymentOptions={availableOptions}
     />
   );
 }
