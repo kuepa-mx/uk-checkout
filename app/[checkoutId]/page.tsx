@@ -226,7 +226,17 @@ export default async function CheckoutPage({
     );
   }
 
-  if (checkout.is_expired) {
+  // is_expired lo calcula el backend en el momento del GET, y getCheckout está cacheado:
+  // si el checkout vence por paso del tiempo, el valor cacheado queda mintiendo. expires_at
+  // es un instante fijo, así que compararlo contra "ahora" en cada render siempre da bien.
+  // Solo aplica a checkouts con descuento asignado (los de bot), que es donde el backend
+  // enforza la expiración.
+  const isExpired =
+    Boolean(checkout.descuento_id) &&
+    (checkout.is_expired === true ||
+      new Date(checkout.expires_at) < new Date());
+
+  if (isExpired) {
     return (
       <CheckoutCard>
         <CheckoutExpired expiresAt={checkout.expires_at} />
