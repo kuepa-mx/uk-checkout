@@ -4,7 +4,7 @@ import { TCheckoutForm } from "@/components/checkout-form";
 import { getGroupsByCareerCodeAndOpeningDate } from "@/lib/api";
 import { Entity } from "@/lib/enum/entity";
 import { api } from "@/lib/http";
-import { cacheTag } from "next/cache";
+import { cacheTag, updateTag } from "next/cache";
 import { getById, update } from "./entity";
 import { getCareerCost } from "./career";
 import { generatePaymentLink } from "./payments";
@@ -29,7 +29,11 @@ export async function updateCheckout(
       "Content-Type": "application/json",
     },
   });
-  // revalidateTag(`checkout:${checkoutId}`, "max");
+  // El checkout está cacheado ("use cache" + cacheTag en getCheckout). Sin esto, el front
+  // sigue sirviendo el estado previo: plan viejo, o un checkout ya vencido como vigente.
+  // updateTag y no revalidateTag: este último es stale-while-revalidate y, por diseño, los
+  // Server Actions no leen sus propias escrituras.
+  updateTag(`checkout:${checkoutId}`);
 
   return data;
 }
