@@ -42,6 +42,7 @@ import FormSubtitle from "./checkout-form-subtitle";
 import { Accordion, AccordionContent, AccordionItem } from "./ui/accordion";
 import CheckoutCard from "./checkout-card";
 import InfoMessage from "./info-message";
+import CheckoutSubmitError from "./checkout-submit-error";
 
 function getApertureDateOptions() {
   // Return the 2 closest dates after the current date
@@ -145,34 +146,44 @@ export default function CheckoutForm({
     control: form.control,
   });
   const [confirmationStep, setConfirmationStep] = useState(false);
+  const [submitFailed, setSubmitFailed] = useState(false);
   const [isPending, startTransition] = useTransition();
   const onSubmit = useCallback<SubmitHandler<TCheckoutForm>>(
     async (data) => {
-      const discount = discounts.find(
-        (discount) => discount.descuento_id === data.discountType,
-      );
-      const career = careers.find(
-        (career) => career.carrera_id === data.career,
-      );
-      if (!career) {
-        throw new Error(`Carrera no encontrada para el ID: ${data.career}`);
-      }
-      if (!discount) {
-        throw new Error(
-          `Descuento no encontrado para el ID: ${data.discountType}`,
-        );
-      }
+      try {
+        setSubmitFailed(false);
 
-      const paymentLink = await handleCheckoutSubmission(
-        checkoutFormSchema.cast(data),
-        checkout,
-        discount,
-        career,
-      );
-      if (paymentLink.paymentUrl) {
-        window.open(paymentLink.paymentUrl, "_blank");
+        const discount = discounts.find(
+          (discount) => discount.descuento_id === data.discountType,
+        );
+        const career = careers.find(
+          (career) => career.carrera_id === data.career,
+        );
+        if (!career) {
+          throw new Error(`Carrera no encontrada para el ID: ${data.career}`);
+        }
+        if (!discount) {
+          throw new Error(
+            `Descuento no encontrado para el ID: ${data.discountType}`,
+          );
+        }
+
+        const paymentLink = await handleCheckoutSubmission(
+          checkoutFormSchema.cast(data),
+          checkout,
+          discount,
+          career,
+        );
+        if (paymentLink.paymentUrl) {
+          window.open(paymentLink.paymentUrl, "_blank");
+        }
+        router.refresh();
+      } catch (error) {
+        // No mostramos el mensaje crudo del error al lead: puede ser un 500
+        // del proveedor de pagos o un detalle interno del backend.
+        console.error("Checkout submission failed", error);
+        setSubmitFailed(true);
       }
-      router.refresh();
     },
     [careers, discounts, checkout, router],
   );
@@ -208,6 +219,14 @@ export default function CheckoutForm({
   );
 
   const isLoading = formState.isSubmitting || isPending;
+
+  if (submitFailed) {
+    return (
+      <CheckoutCard>
+        <CheckoutSubmitError onRetry={() => setSubmitFailed(false)} />
+      </CheckoutCard>
+    );
+  }
 
   if (formState.isSubmitting) {
     return (
