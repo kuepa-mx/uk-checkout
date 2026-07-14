@@ -6,7 +6,7 @@ const ENV = process.env.NODE_ENV === "development" ? "dev" : "prod";
 // IMPORTANT: This instance will never run in the browser
 export const api = axios.create({
   baseURL: process.env.API_URL, // only server-side envs
-  timeout: 3_000,
+  timeout: 30_000,
   headers: {
     "x-origin": `Checkout-SelfService-${ENV}`,
     "ngrok-skip-browser-warning": "true",
