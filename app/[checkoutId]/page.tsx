@@ -231,10 +231,13 @@ export default async function CheckoutPage({
   // es un instante fijo, así que compararlo contra "ahora" en cada render siempre da bien.
   // Solo aplica a checkouts con descuento asignado (los de bot), que es donde el backend
   // enforza la expiración.
+  const expiresAt = checkout.expires_at ? new Date(checkout.expires_at) : null;
+  const hasValidExpiry =
+    expiresAt !== null && !Number.isNaN(expiresAt.getTime());
   const isExpired =
     Boolean(checkout.descuento_id) &&
     (checkout.is_expired === true ||
-      new Date(checkout.expires_at) < new Date());
+      (hasValidExpiry && expiresAt < new Date()));
 
   if (isExpired) {
     return (
