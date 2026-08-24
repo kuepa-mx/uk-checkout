@@ -60,7 +60,7 @@ function getApertureDateOptions() {
 
 function getDefaultPaymentOption(
   paymentOptions?: TPaymentPillProps[],
-  selectedPlan?: string,
+  selectedPlan?: string
 ) {
   if (!paymentOptions) {
     throw new Error("Payment options not found");
@@ -94,18 +94,18 @@ export default function CheckoutForm({
 
   const selectedPlan = useMemo(
     () => searchParams.get("sp") ?? "",
-    [searchParams],
+    [searchParams]
   );
   const preselectedId = useMemo(
     () =>
       checkout.descuento_id ??
       checkout.selected_plan_type ??
       (selectedPlan || undefined),
-    [checkout.descuento_id, checkout.selected_plan_type, selectedPlan],
+    [checkout.descuento_id, checkout.selected_plan_type, selectedPlan]
   );
   const defaultPaymentOption = useMemo(
     () => getDefaultPaymentOption(paymentOptions, preselectedId),
-    [paymentOptions, preselectedId],
+    [paymentOptions, preselectedId]
   );
 
   const [firstName = "", lastName = ""] = useMemo(() => {
@@ -154,17 +154,17 @@ export default function CheckoutForm({
         setSubmitFailed(false);
 
         const discount = discounts.find(
-          (discount) => discount.descuento_id === data.discountType,
+          (discount) => discount.descuento_id === data.discountType
         );
         const career = careers.find(
-          (career) => career.carrera_id === data.career,
+          (career) => career.carrera_id === data.career
         );
         if (!career) {
           throw new Error(`Carrera no encontrada para el ID: ${data.career}`);
         }
         if (!discount) {
           throw new Error(
-            `Descuento no encontrado para el ID: ${data.discountType}`,
+            `Descuento no encontrado para el ID: ${data.discountType}`
           );
         }
 
@@ -172,7 +172,7 @@ export default function CheckoutForm({
           checkoutFormSchema.cast(data),
           checkout,
           discount,
-          career,
+          career
         );
         if (paymentLink.paymentUrl) {
           window.open(paymentLink.paymentUrl, "_blank");
@@ -185,7 +185,7 @@ export default function CheckoutForm({
         setSubmitFailed(true);
       }
     },
-    [careers, discounts, checkout, router],
+    [careers, discounts, checkout, router]
   );
 
   useEffect(() => {
@@ -259,10 +259,10 @@ export default function CheckoutForm({
           onPrevClick={() => setConfirmationStep(false)}
           onConfirmClick={form.handleSubmit(onSubmit)}
           career={careers.find(
-            (career) => career.carrera_id === selectedCareerId,
+            (career) => career.carrera_id === selectedCareerId
           )}
           selectedPaymentOption={paymentOptions.find(
-            (option) => option.id === discountType,
+            (option) => option.id === discountType
           )}
         />
       </CheckoutCard>
@@ -276,12 +276,11 @@ export default function CheckoutForm({
           <form
             className={cn(
               "space-y-2 grow flex flex-col w-full",
-              isLoading && "pointer-events-none",
+              isLoading && "pointer-events-none"
             )}
             onSubmit={form.handleSubmit(onSubmit, (errors) => {
               console.error("Form errors", errors);
-            })}
-          >
+            })}>
             {/* <InfoMessage /> */}
             <FieldRow>
               <FormField
@@ -327,25 +326,22 @@ export default function CheckoutForm({
                               carrera: {
                                 carrera_id: value,
                               },
-                            },
+                            }
                           );
                           router.refresh();
                         });
                       }}
-                      value={field.value}
-                    >
+                      value={field.value}>
                       <SelectTrigger
                         id="career"
-                        className="w-full text-ellipsis overflow-hidden"
-                      >
+                        className="w-full text-ellipsis overflow-hidden">
                         <SelectValue placeholder="Selecciona una carrera" />
                       </SelectTrigger>
                       <SelectContent>
                         {careers.map((career) => (
                           <SelectItem
                             key={career.carrera_id}
-                            value={career.carrera_id}
-                          >
+                            value={career.carrera_id}>
                             {career.carrera_nombre}
                           </SelectItem>
                         ))}
@@ -373,14 +369,12 @@ export default function CheckoutForm({
                           });
                         });
                       }}
-                      value={field.value}
-                    >
+                      value={field.value}>
                       <SelectTrigger
                         id="starting-date"
                         className={cn("w-full")}
                         data-error={!!formState.errors.startingDate}
-                        aria-invalid={!!formState.errors.startingDate}
-                      >
+                        aria-invalid={!!formState.errors.startingDate}>
                         <SelectValue placeholder="Selecciona una fecha" />
                       </SelectTrigger>
                       <SelectContent>
@@ -400,8 +394,7 @@ export default function CheckoutForm({
             <Accordion type="single" collapsible defaultValue="payment">
               <AccordionItem
                 value="payment"
-                data-error={!isCheckoutFormCardValid}
-              >
+                data-error={!isCheckoutFormCardValid}>
                 <AccordionContent>
                   <PaymentPills
                     paymentOptions={paymentOptions}
@@ -430,7 +423,6 @@ export default function CheckoutForm({
                       const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@ukuepa.com`;
                       await update<TLead>(Entity.LEAD, checkout.lead.lead_id, {
                         nombre: `${firstName} ${lastName}`,
-                        email: email,
                         correo_universitario: email,
                         carrera: {
                           carrera_id: form.getValues("career"),
@@ -440,8 +432,7 @@ export default function CheckoutForm({
                       setConfirmationStep(true);
                     });
                   });
-                }}
-              >
+                }}>
                 {isLoading ? (
                   <Spinner className="size-4 animate-spin" />
                 ) : (
